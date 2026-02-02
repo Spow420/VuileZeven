@@ -368,38 +368,49 @@ function handleSpecialCard(room, card, playerIndex) {
       room.players[nextPlayerIndex].cardsToDraw += 2;
       // Huidige speler verdedigt met 7, dus eigen penalty vervalt
       currentPlayer.cardsToDraw = 0;
+      // Track penalty chain
+      if (!room.penaltyChain) {
+        room.penaltyChain = {
+          totalCards: 2,
+          originalSuit: card.suit,
+          lastPenaltyPlayerIndex: playerIndex,
+          penaltyTarget: nextPlayerIndex
+        };
+      } else {
+        room.penaltyChain.totalCards += 2;
+        room.penaltyChain.lastPenaltyPlayerIndex = playerIndex;
+        room.penaltyChain.originalSuit = card.suit;
+      }
       break;
     case 'aas':
-      // Skip de volgende speler
-      // Als er cardsToDraw is, gaat het naar de speler erna (omdat volgende wordt geskipped)
-      const currentCardsToDraw = currentPlayer.cardsToDraw;
-      if (currentCardsToDraw > 0) {
-        // Verplaats cardsToDraw naar de speler 2 posities verder
-        const skipPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+      // Skip volgende speler
+      const skipPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+      // Als er pending kaarten zijn, gaan ze naar speler erna
+      if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
         const targetPlayerIndex = (skipPlayerIndex + room.direction + room.players.length) % room.players.length;
-        
-        room.players[targetPlayerIndex].cardsToDraw = currentCardsToDraw;
+        room.players[targetPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
+        room.penaltyChain.penaltyTarget = targetPlayerIndex;
       }
       // Skip 1 speler
-      room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+      room.currentPlayer = skipPlayerIndex;
       break;
     case '10':
-      // Gaat 1 keer achteruit en dan terug naar jou
-      // Als er cardsToDraw is, kaatst het terug naar de vorige speler
-      const cardsToReflect = currentPlayer.cardsToDraw;
-      if (cardsToReflect > 0) {
-        // Zoek de vorige speler (degene die de 7 gooide)
-        const previousPlayerIndex = (room.currentPlayer - room.direction + room.players.length) % room.players.length;
-        
-        room.players[previousPlayerIndex].cardsToDraw = cardsToReflect;
-        currentPlayer.cardsToDraw = 0;
-        
-        // Zet currentPlayer naar de vorige speler min 1 (zodat nextPlayer() het goed zet)
-        room.currentPlayer = (previousPlayerIndex - room.direction + room.players.length) % room.players.length;
-      } else {
-        // Anders gaat het 1 achteruit (en dan wordt nextPlayer aangeroepen die het weer vooruit zet)
-        // Doe niks, de nextPlayer() call wordt overgeslagen in playCard
+      // Reflecteer penalty terug naar originele speler
+      if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
+        // Check of kaart dezelfde suit als originele 7
+        if (card.suit === room.penaltyChain.originalSuit) {
+          // Kaats terug naar wie de penalty gooide
+          const originalPlayerIndex = room.penaltyChain.lastPenaltyPlayerIndex;
+          room.players[originalPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
+          currentPlayer.cardsToDraw = 0;
+          
+          // Zet huidige speler naar degene vóór die (zodat beurt weer naar huidi gaat)
+          room.currentPlayer = (originalPlayerIndex - room.direction + room.players.length) % room.players.length;
+          
+          // Reset penalty chain
+          room.penaltyChain = null;
+        }
       }
       break;
     case 'boer':
