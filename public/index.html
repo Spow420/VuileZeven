@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="true">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0b1f16">
+    <title>Vuile Zeven - Pis Yedili</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login scherm -->
+        <div id="loginScreen" class="screen active">
+            <div class="container">
+                <h1>Vuile Zeven</h1>
+                <p class="subtitle">Pis Yedili</p>
+                <div class="form">
+                    <input type="text" id="playerName" placeholder="Jouw naam / Adın" maxlength="20">
+                    <input type="text" id="roomCode" placeholder="Room code (bijv. ABCD) / Oda kodu" maxlength="10">
+                    <button id="joinButton">Join Room / Odaya Katıl</button>
+                </div>
+                <p class="info">Maak een room code aan en deel deze met je vrienden! / Bir oda kodu oluştur ve arkadaşlarınla paylaş!</p>
+            </div>
+        </div>
+
+        <!-- Lobby scherm -->
+        <div id="lobbyScreen" class="screen">
+            <div class="container">
+                <h1>Vuile Zeven</h1>
+                <p class="subtitle">Pis Yedili</p>
+                <h2>Room: <span id="currentRoomCode"></span></h2>
+                <div id="playersList">
+                    <h3>Spelers in de lobby / Lobideki Oyuncular:</h3>
+                    <ul id="playersUl"></ul>
+                </div>
+                <button id="startButton">Start Spel / Oyunu Başlat</button>
+                <p class="info">Wacht tot iedereen er is (minimaal 2 spelers) / Herkesin gelmesini bekleyin (en az 2 oyuncu)</p>
+            </div>
+        </div>
+
+        <!-- Game scherm -->
+        <div id="gameScreen" class="screen">
+            <div class="game-container">
+                <!-- Spelers in cirkel -->
+                <div class="players-circle">
+                    <div id="playerTop" class="player-position top"></div>
+                    <div id="playerRight" class="player-position right"></div>
+                    <div id="playerBottom" class="player-position bottom"></div>
+                    <div id="playerLeft" class="player-position left"></div>
+                    
+                    <!-- Game midden -->
+                    <div class="game-center">
+                        <div class="discard-pile">
+                            <p style="color: white; margin-bottom: 10px;">Bovenste kaart:</p>
+                            <div id="topCard" class="card"></div>
+                            <p style="color: white; margin-top: 15px; font-size: 14px;">Deck: <span id="deckCount">0</span></p>
+                        </div>
+                        <div style="display: flex; gap: 15px; margin-top: 15px;">
+                            <button id="drawButton" class="draw-button">Trek Kaart</button>
+                            <button id="passButton" class="pass-button">Pas</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jouw kaarten onderaan -->
+                <div class="bottom-section">
+                    <h3>Jouw kaarten:</h3>
+                    <div id="playerHand" class="hand"></div>
+                </div>
+
+                <div id="messageBox" class="message-box"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
