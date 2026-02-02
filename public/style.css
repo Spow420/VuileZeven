@@ -36,38 +36,10 @@ body {
 
 .screen {
     display: none;
-    position: relative;
 }
 
 .screen.active {
     display: block;
-}
-
-/* Taalknop */
-.lang-button {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 100%);
-    border: 2px solid var(--gold);
-    color: var(--ink);
-    font-size: 14px;
-    font-weight: bold;
-    padding: 10px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    transition: all 0.2s ease;
-    z-index: 1000;
-}
-
-.lang-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
-}
-
-.lang-button:active {
-    transform: translateY(0);
 }
 
 .container {
