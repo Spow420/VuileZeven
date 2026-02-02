@@ -1,5 +1,5 @@
 // Verbind met server (lokaal of extern)
-const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://YOUR_RENDER_URL.onrender.com';
+const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://vuilezeven.onrender.com';
 const socket = serverURL ? io(serverURL) : io();
 
 // Schermen
