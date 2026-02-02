@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="true">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b1f16">
-    <title>Vuile Zeven - Pis Yedili</title>
+    <title>Vuile Zeven</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,13 +15,12 @@
         <div id="loginScreen" class="screen active">
             <div class="container">
                 <h1>Vuile Zeven</h1>
-                <p class="subtitle">Pis Yedili</p>
                 <div class="form">
-                    <input type="text" id="playerName" placeholder="Jouw naam / Adın" maxlength="20">
-                    <input type="text" id="roomCode" placeholder="Room code (bijv. ABCD) / Oda kodu" maxlength="10">
-                    <button id="joinButton">Join Room / Odaya Katıl</button>
+                    <input type="text" id="playerName" placeholder="Jouw naam" maxlength="20">
+                    <input type="text" id="roomCode" placeholder="Room code (bijv. ABCD)" maxlength="10">
+                    <button id="joinButton">Join Room</button>
                 </div>
-                <p class="info">Maak een room code aan en deel deze met je vrienden! / Bir oda kodu oluştur ve arkadaşlarınla paylaş!</p>
+                <p class="info">Maak een room code aan en deel deze met je vrienden!</p>
             </div>
         </div>
 
@@ -29,14 +28,13 @@
         <div id="lobbyScreen" class="screen">
             <div class="container">
                 <h1>Vuile Zeven</h1>
-                <p class="subtitle">Pis Yedili</p>
                 <h2>Room: <span id="currentRoomCode"></span></h2>
                 <div id="playersList">
-                    <h3>Spelers in de lobby / Lobideki Oyuncular:</h3>
+                    <h3>Spelers in de lobby:</h3>
                     <ul id="playersUl"></ul>
                 </div>
-                <button id="startButton">Start Spel / Oyunu Başlat</button>
-                <p class="info">Wacht tot iedereen er is (minimaal 2 spelers) / Herkesin gelmesini bekleyin (en az 2 oyuncu)</p>
+                <button id="startButton">Start Spel</button>
+                <p class="info">Wacht tot iedereen er is (minimaal 2 spelers)</p>
             </div>
         </div>
 
