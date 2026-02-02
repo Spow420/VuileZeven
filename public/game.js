@@ -1,64 +1,64 @@
 // i18n - Internationalisatie
 const translations = {
-    en: {
+    nl: {
         // Login screen
-        title: 'Dirty Seven',
-        yourName: 'Your name',
-        roomCode: 'Room code (e.g. ABCD)',
+        title: 'Vuile Zeven',
+        yourName: 'Jouw naam',
+        roomCode: 'Room code (bijv. ABCD)',
         joinButton: 'Join Room',
-        createInfo: 'Create a room code and share it with your friends!',
+        createInfo: 'Maak een room code aan en deel deze met je vrienden!',
         
         // Lobby screen
         roomLabel: 'Room',
-        playersInLobby: 'Players in lobby:',
-        startButton: 'Start Game',
-        waitInfo: 'Wait for everyone (minimum 2 players)',
+        playersInLobby: 'Spelers in de lobby:',
+        startButton: 'Start Spel',
+        waitInfo: 'Wacht tot iedereen er is (minimaal 2 spelers)',
         
         // Game screen
-        topCard: 'Top card:',
+        topCard: 'Bovenste kaart:',
         deck: 'Deck',
-        drawCard: 'Draw Card',
-        pass: 'Pass',
-        yourCards: 'Your cards:',
-        cardsLabel: 'cards',
+        drawCard: 'Trek Kaart',
+        pass: 'Pas',
+        yourCards: 'Jouw kaarten:',
+        cardsLabel: 'kaarten',
         
         // Game messages
-        firstRound: 'FIRST ROUND: Only clubs! ♣',
-        yourTurn: 'Your turn!',
-        waitingFor: 'Waiting for',
-        invalidMove: 'Invalid move!',
-        mustDrawCards: 'You must draw',
-        cards: 'cards',
-        mustDrawOrDefend: 'You must draw cards or play a defense card (7, 10, Ace)!',
-        mustDrawFirst: 'You must draw a card first before passing!',
-        alreadyDrew: 'You can only draw 1 card per turn (unless penalty cards are due)!',
-        cannotPass: 'You have a playable card! Play it or draw a card.',
-        gameOver: 'Game Over!',
-        wins: 'wins!',
-        fillNameAndCode: 'Fill in your name and room code!',
-        roomFull: 'This room is full!',
-        nameTaken: 'This name is already taken!',
-        notEnoughPlayers: 'At least 2 players are needed!',
-        notYourTurn: 'It\'s not your turn!',
-        invalidCard: 'You can\'t play this card!',
-        mustDrawCardsFirst: 'You must draw cards first!',
-        firstRoundClubsOnly: 'In the first round, it must stay clubs!',
-        alreadyDrawnTitle: 'You already drew this turn',
-        drawCardTitle: 'Draw a card',
-        mustDefendTitle: 'You must draw or defend with 7/10/Ace!',
-        drawFirstTitle: 'Draw a card first before passing',
-        passThisTurnTitle: 'Pass this turn',
-        toDraw: 'to draw!',
+        firstRound: 'EERSTE RONDE: Alleen klavers! ♣',
+        yourTurn: 'Jouw beurt!',
+        waitingFor: 'Wachten op',
+        invalidMove: 'Ongeldige zet!',
+        mustDrawCards: 'Je moet trekken',
+        cards: 'kaarten',
+        mustDrawOrDefend: 'Je moet kaarten trekken of een verdedigingskaart (7, 10, Aas) spelen!',
+        mustDrawFirst: 'Trek eerst een kaart voordat je past!',
+        alreadyDrew: 'Je mag maar 1 kaart trekken per beurt (tenzij je strafkaarten moet trekken)!',
+        cannotPass: 'Je hebt een speelbare kaart! Speel deze of trek een kaart.',
+        gameOver: 'Spel Afgelopen!',
+        wins: 'heeft gewonnen!',
+        fillNameAndCode: 'Vul je naam en room code in!',
+        roomFull: 'Deze room is vol!',
+        nameTaken: 'Deze naam is al in gebruik!',
+        notEnoughPlayers: 'Er zijn minimaal 2 spelers nodig!',
+        notYourTurn: 'Het is niet jouw beurt!',
+        invalidCard: 'Je kunt deze kaart niet spelen!',
+        mustDrawCardsFirst: 'Je moet eerst kaarten trekken!',
+        firstRoundClubsOnly: 'In de eerste ronde moet het klaver blijven!',
+        alreadyDrawnTitle: 'Je hebt al getrokken deze beurt',
+        drawCardTitle: 'Trek een kaart',
+        mustDefendTitle: 'Je moet trekken of verdedigen met 7/10/Aas!',
+        drawFirstTitle: 'Trek eerst een kaart voordat je past',
+        passThisTurnTitle: 'Pas deze beurt',
+        toDraw: 'trekken!',
         
         // Special cards
-        sevenPlayed: 'played a 7! Draw 2 cards or play a 7/10/Ace!',
-        tenPlayed: 'played a 10! Penalty reflected!',
-        acePlayed: 'played an Ace! Next player skipped!',
-        jackPlayed: 'played a Jack! Choose a color:',
-        hearts: 'Hearts',
-        diamonds: 'Diamonds',
-        clubs: 'Clubs',
-        spades: 'Spades'
+        sevenPlayed: 'speelde een 7! Trek 2 kaarten of speel een 7/10/Aas!',
+        tenPlayed: 'speelde een 10! Straf teruggekaatst!',
+        acePlayed: 'speelde een Aas! Volgende speler overgeslagen!',
+        jackPlayed: 'speelde een Boer! Kies een kleur:',
+        hearts: 'Harten',
+        diamonds: 'Ruiten',
+        clubs: 'Klaver',
+        spades: 'Schoppen'
     },
     tr: {
         // Login screen
@@ -122,8 +122,8 @@ const translations = {
     }
 };
 
-// Huidige taal (standaard Engels)
-let currentLang = localStorage.getItem('lang') || 'en';
+// Huidige taal (standaard Nederlands)
+let currentLang = localStorage.getItem('lang') || 'nl';
 
 // Vertaal functie
 function t(key) {
@@ -141,7 +141,7 @@ function switchLanguage(lang) {
 function updateAllTexts() {
     // Login screen
     document.querySelector('#loginScreen h1').textContent = t('title');
-    document.querySelector('#loginScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : '';
+    document.querySelector('#loginScreen .subtitle').textContent = '';
     playerNameInput.placeholder = t('yourName');
     roomCodeInput.placeholder = t('roomCode');
     joinButton.textContent = t('joinButton');
@@ -149,7 +149,7 @@ function updateAllTexts() {
     
     // Lobby screen
     document.querySelector('#lobbyScreen h1').textContent = t('title');
-    document.querySelector('#lobbyScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : '';
+    document.querySelector('#lobbyScreen .subtitle').textContent = '';
     document.querySelector('#playersList h3').textContent = t('playersInLobby');
     startButton.textContent = t('startButton');
     document.querySelector('#lobbyScreen .info').textContent = t('waitInfo');
@@ -160,10 +160,10 @@ function updateAllTexts() {
     passButton.textContent = t('pass');
     document.querySelector('.bottom-section h3').textContent = t('yourCards');
     
-    // Update taalknop
+    // Update taalknop (alleen zichtbaar op login screen)
     const langButton = document.getElementById('langButton');
     if (langButton) {
-        langButton.textContent = currentLang === 'en' ? '🇹🇷 TR' : '🇬🇧 EN';
+        langButton.textContent = currentLang === 'nl' ? '🇹🇷 TR' : '🇳🇱 NL';
     }
 }
 
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Taalknop event listener
     const langButton = document.getElementById('langButton');
     langButton.addEventListener('click', () => {
-        switchLanguage(currentLang === 'en' ? 'tr' : 'en');
+        switchLanguage(currentLang === 'nl' ? 'tr' : 'nl');
     });
 });
 
