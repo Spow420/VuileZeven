@@ -234,8 +234,10 @@ socket.on('nameTaken', () => {
     showMessage('Deze naam is al in gebruik!');
 });
 
-socket.on('notEnoughPlayers', () => {
-    showMessage('Er zijn minimaal 2 spelers nodig!');
+socket.on('notEnoughPlayers', (data) => {
+    const required = data?.required || 3;
+    const current = data?.current || 0;
+    showMessage(`Minimaal ${required} spelers nodig! (nu: ${current})`);
 });
 
 socket.on('notYourTurn', () => {

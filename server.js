@@ -87,9 +87,9 @@ io.on('connection', (socket) => {
 
     const room = rooms[roomCode];
 
-    // Check of er genoeg spelers zijn (minimaal 2)
-    if (room.players.length < 2) {
-      socket.emit('notEnoughPlayers');
+    // Check of er genoeg spelers zijn (minimaal 3)
+    if (room.players.length < 3) {
+      socket.emit('notEnoughPlayers', { required: 3, current: room.players.length });
       return;
     }
 
