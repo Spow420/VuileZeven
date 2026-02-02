@@ -1,3 +1,172 @@
+// i18n - Internationalisatie
+const translations = {
+    en: {
+        // Login screen
+        title: 'Dirty Seven',
+        yourName: 'Your name',
+        roomCode: 'Room code (e.g. ABCD)',
+        joinButton: 'Join Room',
+        createInfo: 'Create a room code and share it with your friends!',
+        
+        // Lobby screen
+        roomLabel: 'Room',
+        playersInLobby: 'Players in lobby:',
+        startButton: 'Start Game',
+        waitInfo: 'Wait for everyone (minimum 2 players)',
+        
+        // Game screen
+        topCard: 'Top card:',
+        deck: 'Deck',
+        drawCard: 'Draw Card',
+        pass: 'Pass',
+        yourCards: 'Your cards:',
+        cardsLabel: 'cards',
+        
+        // Game messages
+        firstRound: 'FIRST ROUND: Only clubs! ♣',
+        yourTurn: 'Your turn!',
+        waitingFor: 'Waiting for',
+        invalidMove: 'Invalid move!',
+        mustDrawCards: 'You must draw',
+        cards: 'cards',
+        mustDrawOrDefend: 'You must draw cards or play a defense card (7, 10, Ace)!',
+        mustDrawFirst: 'You must draw a card first before passing!',
+        alreadyDrew: 'You can only draw 1 card per turn (unless penalty cards are due)!',
+        cannotPass: 'You have a playable card! Play it or draw a card.',
+        gameOver: 'Game Over!',
+        wins: 'wins!',
+        fillNameAndCode: 'Fill in your name and room code!',
+        roomFull: 'This room is full!',
+        nameTaken: 'This name is already taken!',
+        notEnoughPlayers: 'At least 2 players are needed!',
+        notYourTurn: 'It\'s not your turn!',
+        invalidCard: 'You can\'t play this card!',
+        mustDrawCardsFirst: 'You must draw cards first!',
+        firstRoundClubsOnly: 'In the first round, it must stay clubs!',
+        alreadyDrawnTitle: 'You already drew this turn',
+        drawCardTitle: 'Draw a card',
+        mustDefendTitle: 'You must draw or defend with 7/10/Ace!',
+        drawFirstTitle: 'Draw a card first before passing',
+        passThisTurnTitle: 'Pass this turn',
+        toDraw: 'to draw!',
+        
+        // Special cards
+        sevenPlayed: 'played a 7! Draw 2 cards or play a 7/10/Ace!',
+        tenPlayed: 'played a 10! Penalty reflected!',
+        acePlayed: 'played an Ace! Next player skipped!',
+        jackPlayed: 'played a Jack! Choose a color:',
+        hearts: 'Hearts',
+        diamonds: 'Diamonds',
+        clubs: 'Clubs',
+        spades: 'Spades'
+    },
+    tr: {
+        // Login screen
+        title: 'Pis Yedili',
+        yourName: 'Adın',
+        roomCode: 'Oda kodu (örn. ABCD)',
+        joinButton: 'Odaya Katıl',
+        createInfo: 'Bir oda kodu oluştur ve arkadaşlarınla paylaş!',
+        
+        // Lobby screen
+        roomLabel: 'Oda',
+        playersInLobby: 'Lobideki Oyuncular:',
+        startButton: 'Oyunu Başlat',
+        waitInfo: 'Herkesin gelmesini bekleyin (en az 2 oyuncu)',
+        
+        // Game screen
+        topCard: 'Üstteki kart:',
+        deck: 'Deste',
+        drawCard: 'Kart Çek',
+        pass: 'Pas',
+        yourCards: 'Kartların:',
+        cardsLabel: 'kart',
+        
+        // Game messages
+        firstRound: 'İLK ROUND: Sadece Çoğul! ♣',
+        yourTurn: 'Senin sıran!',
+        waitingFor: 'Bekleniyor',
+        invalidMove: 'Geçersiz hamle!',
+        mustDrawCards: 'Çekmelisin',
+        cards: 'kart',
+        mustDrawOrDefend: 'Kart çekmelisin veya savunma kartı (7, 10, As) oynamalısın!',
+        mustDrawFirst: 'Pas geçmeden önce bir kart çekmelisin!',
+        alreadyDrew: 'Tur başına sadece 1 kart çekebilirsin (ceza kartları hariç)!',
+        cannotPass: 'Oynayabileceğin bir kartın var! Oyna veya kart çek.',
+        gameOver: 'Oyun Bitti!',
+        wins: 'kazandı!',
+        fillNameAndCode: 'Adını ve oda kodunu gir!',
+        roomFull: 'Bu oda dolu!',
+        nameTaken: 'Bu isim zaten kullanımda!',
+        notEnoughPlayers: 'En az 2 oyuncu gerekli!',
+        notYourTurn: 'Senin sıran değil!',
+        invalidCard: 'Bu kartı oynayamazsın!',
+        mustDrawCardsFirst: 'Önce kart çekmelisin!',
+        firstRoundClubsOnly: 'İlk roundda Çoğul kalmalı!',
+        alreadyDrawnTitle: 'Bu turda zaten çektin',
+        drawCardTitle: 'Kart çek',
+        mustDefendTitle: 'Çek veya 7/10/As ile savun!',
+        drawFirstTitle: 'Pas geçmeden önce kart çek',
+        passThisTurnTitle: 'Bu turu pas geç',
+        toDraw: 'çekilecek!',
+        
+        // Special cards
+        sevenPlayed: '7 oynadı! 2 kart çek veya 7/10/As oyna!',
+        tenPlayed: '10 oynadı! Ceza yansıtıldı!',
+        acePlayed: 'As oynadı! Sonraki oyuncu atlandı!',
+        jackPlayed: 'Vale oynadı! Renk seç:',
+        hearts: 'Kupa',
+        diamonds: 'Karo',
+        clubs: 'Çoğul',
+        spades: 'Maça'
+    }
+};
+
+// Huidige taal (standaard Engels)
+let currentLang = localStorage.getItem('lang') || 'en';
+
+// Vertaal functie
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+// Wissel taal
+function switchLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    updateAllTexts();
+}
+
+// Update alle teksten op de pagina
+function updateAllTexts() {
+    // Login screen
+    document.querySelector('#loginScreen h1').textContent = t('title');
+    document.querySelector('#loginScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : 'Dirty Seven';
+    playerNameInput.placeholder = t('yourName');
+    roomCodeInput.placeholder = t('roomCode');
+    joinButton.textContent = t('joinButton');
+    document.querySelector('#loginScreen .info').textContent = t('createInfo');
+    
+    // Lobby screen
+    document.querySelector('#lobbyScreen h1').textContent = t('title');
+    document.querySelector('#lobbyScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : 'Dirty Seven';
+    document.querySelector('#playersList h3').textContent = t('playersInLobby');
+    startButton.textContent = t('startButton');
+    document.querySelector('#lobbyScreen .info').textContent = t('waitInfo');
+    
+    // Game screen
+    document.querySelector('.discard-pile p').textContent = t('topCard');
+    drawButton.textContent = t('drawCard');
+    passButton.textContent = t('pass');
+    document.querySelector('.bottom-section h3').textContent = t('yourCards');
+    
+    // Update taalknop
+    const langButton = document.getElementById('langButton');
+    if (langButton) {
+        langButton.textContent = currentLang === 'en' ? '🇹🇷 TR' : '🇬🇧 EN';
+    }
+}
+
 // Verbind met server (lokaal of extern)
 const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://vuilezeven.onrender.com';
 const socket = serverURL ? io(serverURL) : io();
@@ -29,6 +198,17 @@ let currentRoomCode = '';
 let myName = '';
 let isFirstRound = false;
 
+// Initialiseer i18n bij laden
+document.addEventListener('DOMContentLoaded', () => {
+    updateAllTexts();
+    
+    // Taalknop event listener
+    const langButton = document.getElementById('langButton');
+    langButton.addEventListener('click', () => {
+        switchLanguage(currentLang === 'en' ? 'tr' : 'en');
+    });
+});
+
 // Suit symbolen
 const suitSymbols = {
     'harten': '♥',
@@ -53,7 +233,7 @@ joinButton.addEventListener('click', () => {
     const roomCode = roomCodeInput.value.trim().toUpperCase();
 
     if (!playerName || !roomCode) {
-        showMessage('Vul je naam en een room code in!');
+        showMessage(t('fillNameAndCode'));
         return;
     }
 
@@ -130,9 +310,9 @@ socket.on('gameState', (data) => {
             cardsDiv.className = 'player-cards';
             if (player.cardsToDraw > 0) {
                 cardsDiv.classList.add('warning');
-                cardsDiv.innerHTML = `${player.cardCount} kaarten<br>(${player.cardsToDraw} trekken!)`;
+                cardsDiv.innerHTML = `${player.cardCount} ${t('cardsLabel')}<br>(${player.cardsToDraw} ${t('toDraw')})`;
             } else {
-                cardsDiv.textContent = `${player.cardCount} kaarten`;
+                cardsDiv.textContent = `${player.cardCount} ${t('cardsLabel')}`;
             }
             
             positionElement.appendChild(nameDiv);
@@ -148,7 +328,7 @@ socket.on('gameState', (data) => {
     
     // Toon eerste ronde indicator
     if (isFirstRound) {
-        showMessage('EERSTE RONDE: Alleen klavers! ♣');
+        showMessage(t('firstRound'));
     }
     
     // Update player hand
@@ -169,22 +349,22 @@ socket.on('gameState', (data) => {
         // Disable draw als je al getrokken hebt en geen penaltykaarten moet trekken
         if (myPlayer && myPlayer.cardsToDraw === 0 && data.yourHasDrawnThisTurn) {
             drawButton.disabled = true;
-            drawButton.title = 'Je hebt al getrokken deze beurt';
+            drawButton.title = t('alreadyDrawnTitle');
         } else {
             drawButton.disabled = false;
-            drawButton.title = 'Trek een kaart';
+            drawButton.title = t('drawCardTitle');
         }
 
         // Disable pass button als je kaarten moet trekken of nog niet hebt getrokken
         if (myPlayer && myPlayer.cardsToDraw > 0) {
             passButton.disabled = true;
-            passButton.title = 'Je moet eerst trekken of verdedigen met 7/10/Aas!';
+            passButton.title = t('mustDefendTitle');
         } else if (!data.yourHasDrawnThisTurn) {
             passButton.disabled = true;
-            passButton.title = 'Trek eerst een kaart voordat je past';
+            passButton.title = t('drawFirstTitle');
         } else {
             passButton.disabled = false;
-            passButton.title = 'Pas deze beurt';
+            passButton.title = t('passThisTurnTitle');
         }
     } else {
         drawButton.style.display = 'none';
@@ -193,50 +373,50 @@ socket.on('gameState', (data) => {
 });
 
 socket.on('gameOver', (data) => {
-    showMessage(`🎉 ${data.winner} heeft gewonnen! 🎉`);
+    showMessage(`🎉 ${data.winner} ${t('wins')} 🎉`);
     setTimeout(() => {
         showScreen(lobbyScreen);
     }, 3000);
 });
 
 socket.on('roomFull', () => {
-    showMessage('Deze room is vol!');
+    showMessage(t('roomFull'));
 });
 
 socket.on('nameTaken', () => {
-    showMessage('Deze naam is al in gebruik!');
+    showMessage(t('nameTaken'));
 });
 
 socket.on('notEnoughPlayers', () => {
-    showMessage('Er zijn minimaal 2 spelers nodig!');
+    showMessage(t('notEnoughPlayers'));
 });
 
 socket.on('notYourTurn', () => {
-    showMessage('Het is niet jouw beurt!');
+    showMessage(t('notYourTurn'));
 });
 
 socket.on('invalidMove', () => {
-    showMessage('Deze kaart kun je niet spelen!');
+    showMessage(t('invalidCard'));
 });
 
 socket.on('mustDrawCards', () => {
-    showMessage('Je moet eerst kaarten trekken!');
+    showMessage(t('mustDrawCardsFirst'));
 });
 
 socket.on('mustDrawOrDefend', () => {
-    showMessage('Je moet trekken of verdedigen (7, 10, Aas)!');
+    showMessage(t('mustDrawOrDefend'));
 });
 
 socket.on('mustDrawFirst', () => {
-    showMessage('Trek eerst een kaart voordat je past!');
+    showMessage(t('mustDrawFirst'));
 });
 
 socket.on('alreadyDrewThisTurn', () => {
-    showMessage('Je mag maar 1 kaart trekken deze beurt!');
+    showMessage(t('alreadyDrew'));
 });
 
 socket.on('cannotPassWithPlayableCard', () => {
-    showMessage('Je hebt een speelbare kaart, je moet trekken of spelen!');
+    showMessage(t('cannotPass'));
 });
 
 // Helper functions
@@ -298,7 +478,7 @@ function createCard(card, index, clickable) {
             if (card.value === 'boer') {
                 // In eerste ronde moet het klaver blijven
                 if (isFirstRound) {
-                    showMessage('In de eerste ronde moet het klaver blijven!');
+                    showMessage(t('firstRoundClubsOnly'));
                     socket.emit('playCard', { cardIndex: index, chosenSuit: 'klaver' });
                 } else {
                     showSuitSelector((chosenSuit) => {
@@ -385,14 +565,14 @@ function showSuitSelector(callback) {
     modal.className = 'suit-selector-modal';
     
     const title = document.createElement('h3');
-    title.textContent = 'Kies een kleur:';
+    title.textContent = t('jackPlayed').split('!')[0] + '!';
     modal.appendChild(title);
     
     const suits = [
-        { name: 'harten', symbol: '♥', color: 'harten' },
-        { name: 'ruiten', symbol: '♦', color: 'ruiten' },
-        { name: 'klaver', symbol: '♣', color: 'klaver' },
-        { name: 'schoppen', symbol: '♠', color: 'schoppen' }
+        { name: 'harten', symbol: '♥', color: 'harten', label: t('hearts') },
+        { name: 'ruiten', symbol: '♦', color: 'ruiten', label: t('diamonds') },
+        { name: 'klaver', symbol: '♣', color: 'klaver', label: t('clubs') },
+        { name: 'schoppen', symbol: '♠', color: 'schoppen', label: t('spades') }
     ];
     
     const buttonsContainer = document.createElement('div');
@@ -401,7 +581,7 @@ function showSuitSelector(callback) {
     suits.forEach(suit => {
         const button = document.createElement('button');
         button.className = `suit-button ${suit.color}`;
-        button.innerHTML = `<span class="suit-symbol">${suit.symbol}</span><br>${suit.name}`;
+        button.innerHTML = `<span class="suit-symbol">${suit.symbol}</span><br>${suit.label}`;
         button.addEventListener('click', () => {
             overlay.remove();
             callback(suit.name);
