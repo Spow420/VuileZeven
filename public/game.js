@@ -141,7 +141,7 @@ function switchLanguage(lang) {
 function updateAllTexts() {
     // Login screen
     document.querySelector('#loginScreen h1').textContent = t('title');
-    document.querySelector('#loginScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : 'Dirty Seven';
+    document.querySelector('#loginScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : '';
     playerNameInput.placeholder = t('yourName');
     roomCodeInput.placeholder = t('roomCode');
     joinButton.textContent = t('joinButton');
@@ -149,7 +149,7 @@ function updateAllTexts() {
     
     // Lobby screen
     document.querySelector('#lobbyScreen h1').textContent = t('title');
-    document.querySelector('#lobbyScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : 'Dirty Seven';
+    document.querySelector('#lobbyScreen .subtitle').textContent = currentLang === 'tr' ? 'Pis Yedili' : '';
     document.querySelector('#playersList h3').textContent = t('playersInLobby');
     startButton.textContent = t('startButton');
     document.querySelector('#lobbyScreen .info').textContent = t('waitInfo');
