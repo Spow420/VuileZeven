@@ -391,9 +391,12 @@ function handleSpecialCard(room, card, playerIndex) {
         room.players[targetPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
         room.penaltyChain.penaltyTarget = targetPlayerIndex;
+        // Zet currentPlayer naar speler die kaarten krijgt (skip 2 spelers dus)
+        room.currentPlayer = targetPlayerIndex;
+      } else {
+        // Zonder penalty chain: skip gewoon 1 speler
+        room.currentPlayer = skipPlayerIndex;
       }
-      // Skip 1 speler
-      room.currentPlayer = skipPlayerIndex;
       break;
     case '10':
       // Reflecteer penalty terug naar originele speler
