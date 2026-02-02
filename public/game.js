@@ -122,8 +122,8 @@ const translations = {
     }
 };
 
-// Huidige taal (standaard Nederlands)
-let currentLang = localStorage.getItem('lang') || 'nl';
+// Huidige taal (standaard Turks)
+let currentLang = localStorage.getItem('lang') || 'tr';
 
 // Vertaal functie
 function t(key) {
@@ -139,6 +139,9 @@ function switchLanguage(lang) {
 
 // Update alle teksten op de pagina
 function updateAllTexts() {
+    // Update page title
+    document.title = t('title');
+    
     // Login screen
     document.querySelector('#loginScreen h1').textContent = t('title');
     document.querySelector('#loginScreen .subtitle').textContent = '';
@@ -163,7 +166,7 @@ function updateAllTexts() {
     // Update taalknop (alleen zichtbaar op login screen)
     const langButton = document.getElementById('langButton');
     if (langButton) {
-        langButton.textContent = currentLang === 'nl' ? '🇹🇷 TR' : '🇳🇱 NL';
+        langButton.textContent = currentLang === 'tr' ? '🇳🇱 NL' : '🇹🇷 TR';
     }
 }
 
@@ -202,7 +205,7 @@ let isFirstRound = false;
 document.addEventListener('DOMContentLoaded', () => {
     updateAllTexts();
     
-    // Taalknop event listener
+    // Taalknop event listenertr' ? 'nl' : 'tr
     const langButton = document.getElementById('langButton');
     langButton.addEventListener('click', () => {
         switchLanguage(currentLang === 'nl' ? 'tr' : 'nl');
