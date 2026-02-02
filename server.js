@@ -3,7 +3,11 @@ const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
-    origin: ['https://vuilezeven.netlify.app', 'http://localhost:3000'],
+    origin: [
+      'https://vuilezeven.netlify.app',
+      'https://willowy-malabi-cbe9c3.netlify.app',
+      'http://localhost:3000'
+    ],
     methods: ['GET', 'POST']
   }
 });
