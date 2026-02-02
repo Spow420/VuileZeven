@@ -267,7 +267,7 @@ io.on('connection', (socket) => {
       return;
     }
     
-    // Je moet eerst een kaart trekken voordat je mag passen
+    // Je moet eerst minstens 1 kaart trekken in je beurt TENZIJ je al kaarten hebt getrokken
     if (!player.hasDrawnThisTurn) {
       socket.emit('mustDrawFirst');
       return;
