@@ -1,14 +1,27 @@
 // Verbind met server (lokaal of extern)
 const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://vuilezeven.onrender.com';
-const socket = serverURL ? io(serverURL) : io();
+const socket = serverURL
+    ? io(serverURL, { transports: ['websocket', 'polling'], timeout: 20000 })
+    : io();
 
-socket.on('connect_error', () => {
+socket.on('connect', () => {
+    showMessage('Verbonden met server.');
+});
+
+socket.on('connect_error', (err) => {
+    console.error('Socket connect_error:', err);
     showMessage('Kan geen verbinding maken met de server. Wacht 30 seconden en refresh.');
 });
 
 socket.on('disconnect', () => {
     showMessage('Verbinding met de server verbroken. Probeer te refreshen.');
 });
+
+setTimeout(() => {
+    if (!socket.connected) {
+        showMessage('Server niet bereikbaar. Probeer opnieuw over 30 seconden.');
+    }
+}, 5000);
 
 // Schermen
 const loginScreen = document.getElementById('loginScreen');
@@ -57,6 +70,12 @@ const cardValueMap = {
 
 // Join room
 joinButton.addEventListener('click', () => {
+    if (!socket.connected) {
+        socket.connect();
+        showMessage('Nog niet verbonden met server. Even wachten en opnieuw proberen.');
+        return;
+    }
+
     const playerName = playerNameInput.value.trim();
     const roomCode = roomCodeInput.value.trim().toUpperCase();
 
