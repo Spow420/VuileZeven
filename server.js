@@ -1,10 +1,15 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const io = require('socket.io')(http, {
+  cors: {
+    origin: ['https://vuilezeven.netlify.app', 'http://localhost:3000'],
+    methods: ['GET', 'POST']
+  }
+});
 const path = require('path');
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Serve static files
 app.use(express.static('public'));

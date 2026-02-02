@@ -2,6 +2,14 @@
 const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://vuilezeven.onrender.com';
 const socket = serverURL ? io(serverURL) : io();
 
+socket.on('connect_error', () => {
+    showMessage('Kan geen verbinding maken met de server. Wacht 30 seconden en refresh.');
+});
+
+socket.on('disconnect', () => {
+    showMessage('Verbinding met de server verbroken. Probeer te refreshen.');
+});
+
 // Schermen
 const loginScreen = document.getElementById('loginScreen');
 const lobbyScreen = document.getElementById('lobbyScreen');
