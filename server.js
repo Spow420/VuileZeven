@@ -354,27 +354,31 @@ function canPlayCard(card, topCard, cardsToDraw, firstRound) {
     return card.suit === 'klaver';
   }
 
-  // Als er nog geen kaart in het midden ligt, mag je elke kaart spelen
+  // Als er nog geen kaart in het midden ligt, mag je elke kaart spelen (BEHALVE Boer alleen als geen penalty)
   if (!topCard) {
+    if (card.value === 'boer' && cardsToDraw > 0) {
+      return false; // Boer mag niet als je moet verdedigen
+    }
     return true;
   }
 
-  // Boer kan altijd gespeeld worden
+  // Als je kaarten moet trekken, kun je ALLEEN een 7, Aas of 10 spelen (om te verdedigen)
+  // Boer mag NIET verdedigen!
+  if (cardsToDraw > 0) {
+    if (card.value === '7' || card.value === 'aas' || card.value === '10') {
+      const effectiveSuit = topCard.chosenSuit || topCard.suit;
+      return card.suit === effectiveSuit || card.value === topCard.value;
+    }
+    return false; // Alles anders (incl. Boer) mag niet
+  }
+
+  // Boer kan altijd gespeeld worden (TENZIJ je moet verdedigen)
   if (card.value === 'boer') {
     return true;
   }
 
   // Als de topCard een Boer is met gekozen kleur, gebruik die kleur
   const effectiveSuit = topCard.chosenSuit || topCard.suit;
-
-  // Als je kaarten moet trekken, kun je alleen een 7, Aas of 10 spelen (om te verdedigen)
-  // MAAR het moet wel de juiste kleur of waarde zijn!
-  if (cardsToDraw > 0) {
-    if (card.value === '7' || card.value === 'aas' || card.value === '10') {
-      return card.suit === effectiveSuit || card.value === topCard.value;
-    }
-    return false;
-  }
 
   // Anders moet suit of value overeenkomen
   return card.suit === effectiveSuit || card.value === topCard.value;
