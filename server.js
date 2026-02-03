@@ -165,6 +165,14 @@ io.on('connection', (socket) => {
       }
     }
 
+    // Verify: als niemand meer firstRoundPlayed=false heeft, zet firstRound=false
+    if (room.firstRound) {
+      const allPlayed = room.players.every(p => p.firstRoundPlayed);
+      if (allPlayed) {
+        room.firstRound = false;
+      }
+    }
+
     // Bewaar originele cardsToDraw voor 10 logica
     const hadCardsToDraw = player.cardsToDraw > 0;
 
