@@ -454,10 +454,9 @@ function handleSpecialCard(room, card, playerIndex) {
         }
       } else {
         // Normale 10: draai beurt 1 stap terug
-        // A → B (gooit 10) → beurt gaat terug naar A → na A's beurt → weer naar B
         const previousPlayerIndex = (playerIndex - room.direction + room.players.length) % room.players.length;
         room.currentPlayer = previousPlayerIndex;
-        skipNextPlayer = true; // handleSpecialCard heeft al currentPlayer gezet
+        skipNextPlayer = true;
       }
       break;
     case 'boer':
