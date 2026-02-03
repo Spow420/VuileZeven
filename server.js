@@ -361,13 +361,10 @@ function handleSpecialCard(room, card, playerIndex) {
   
   switch (card.value) {
     case '7':
-      // Volgende speler moet 2 kaarten trekken (kan gestapeld worden)
-      const nextPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
-      room.players[nextPlayerIndex].cardsToDraw += 2;
-      // Huidige speler verdedigt met 7, dus eigen penalty vervalt
-      currentPlayer.cardsToDraw = 0;
       // Track penalty chain
       if (!room.penaltyChain) {
+        // Eerste 7: maak chain aan
+        const nextPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
         room.penaltyChain = {
           totalCards: 2,
           originalSuit: card.suit,
@@ -375,10 +372,18 @@ function handleSpecialCard(room, card, playerIndex) {
           penaltyTarget: nextPlayerIndex
         };
       } else {
+        // Volgende 7: voeg toe aan bestaande chain
         room.penaltyChain.totalCards += 2;
         room.penaltyChain.lastPenaltyPlayerIndex = playerIndex;
         room.penaltyChain.originalSuit = card.suit;
+        // penaltyTarget BLIJFT dezelfde (dezelfde speler krijgt alles)
       }
+      
+      // Zet cardsToDraw op de penaltyTarget (accumuleert!)
+      const penaltyTargetIndex = room.penaltyChain.penaltyTarget;
+      room.players[penaltyTargetIndex].cardsToDraw = room.penaltyChain.totalCards;
+      // Huidige speler verdedigt, dus eigen penalty vervalt
+      currentPlayer.cardsToDraw = 0;
       break;
     case 'aas':
       // Aas skipt de volgende speler
