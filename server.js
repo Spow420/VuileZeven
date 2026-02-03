@@ -381,20 +381,22 @@ function handleSpecialCard(room, card, playerIndex) {
       }
       break;
     case 'aas':
-      // Skip volgende speler
-      const skipPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
-      // Als er pending kaarten zijn, gaan ze naar speler erna
+      // Aas skipt de volgende speler
+      // Als er pending kaarten zijn, gaan ze naar de speler NA de geskipte speler
       if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
-        const targetPlayerIndex = (skipPlayerIndex + room.direction + room.players.length) % room.players.length;
+        // Bereken wie geskipped wordt (volgende speler)
+        const skippedPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+        // Bereken wie de kaarten krijgt (speler na de geskipte)
+        const targetPlayerIndex = (skippedPlayerIndex + room.direction + room.players.length) % room.players.length;
         room.players[targetPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
-        room.penaltyChain.penaltyTarget = targetPlayerIndex;
-        // Zet currentPlayer naar speler die kaarten krijgt (skip 2 spelers dus)
-        room.currentPlayer = targetPlayerIndex;
-      } else {
-        // Zonder penalty chain: skip gewoon 1 speler
-        room.currentPlayer = skipPlayerIndex;
+        // Reset chain
+        room.penaltyChain = null;
       }
+      // nextPlayer() wordt aangeroepen door playCard() en skipt automatisch 1 speler
+      // We moeten nog 1 extra skippen, dus zet currentPlayer al 1 stap verder
+      room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+      skipNextPlayer = false; // nextPlayer() moet nog 1x aangeroepen worden voor tweede skip
       break;
     case '10':
       // Reflecteer penalty terug naar originele speler
@@ -406,11 +408,12 @@ function handleSpecialCard(room, card, playerIndex) {
           room.players[originalPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
           currentPlayer.cardsToDraw = 0;
           
-          // Zet huidige speler naar degene vóór die (zodat beurt weer naar huidi gaat)
+          // Zet huidige speler naar degene vóór die (zodat beurt weer naar huidige gaat)
           room.currentPlayer = (originalPlayerIndex - room.direction + room.players.length) % room.players.length;
           
           // Reset penalty chain
           room.penaltyChain = null;
+          skipNextPlayer = true; // handleSpecialCard heeft currentPlayer gezet
         }
       } else {
         // Normale 10: draai beurt 1 stap terug
@@ -419,9 +422,6 @@ function handleSpecialCard(room, card, playerIndex) {
         room.currentPlayer = previousPlayerIndex;
         skipNextPlayer = true; // handleSpecialCard heeft al currentPlayer gezet
       }
-      break;
-    case 'aas':
-      skipNextPlayer = true; // handleSpecialCard heeft al currentPlayer gezet (regel 393/399)
       break;
     case 'boer':
       // Boer: speler kan kleur kiezen (wordt apart afgehandeld in playCard)
