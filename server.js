@@ -415,22 +415,25 @@ function handleSpecialCard(room, card, playerIndex) {
       currentPlayer.cardsToDraw = 0;
       break;
     case 'aas':
-      // Aas skipt de volgende speler
-      // Als er pending kaarten zijn, gaan ze naar de speler NA de geskipte speler
+      // Aas verdedigt tegen penalty (teruggaan naar gooier) OF skipt normale volgende speler
       if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
-        // Bereken wie geskipped wordt (volgende speler)
-        const skippedPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
-        // Bereken wie de kaarten krijgt (speler na de geskipte)
-        const targetPlayerIndex = (skippedPlayerIndex + room.direction + room.players.length) % room.players.length;
-        room.players[targetPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
+        // Aas verdedigt: kaarten gaan terug naar wie de penalty gooide
+        const gooierIndex = room.penaltyChain.lastPenaltyPlayerIndex;
+        room.players[gooierIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
+        
+        // Zet beurt naar speler vóór gooier (zodat beurt gaat naar gooier na nextPlayer)
+        room.currentPlayer = (gooierIndex - room.direction + room.players.length) % room.players.length;
+        
         // Reset chain
         room.penaltyChain = null;
+        skipNextPlayer = true; // handleSpecialCard heeft currentPlayer gezet
+      } else {
+        // Geen penalty: Aas skipt gewoon de volgende speler (normale Aas)
+        // nextPlayer() wordt 2x aangeroepen (1 extra skip)
+        room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+        skipNextPlayer = false; // nextPlayer() moet nog 1x aangeroepen worden voor skip
       }
-      // nextPlayer() wordt aangeroepen door playCard() en skipt automatisch 1 speler
-      // We moeten nog 1 extra skippen, dus zet currentPlayer al 1 stap verder
-      room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
-      skipNextPlayer = false; // nextPlayer() moet nog 1x aangeroepen worden voor tweede skip
       break;
     case '10':
       // Reflecteer penalty terug naar originele speler
