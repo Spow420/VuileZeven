@@ -246,6 +246,10 @@ io.on('connection', (socket) => {
     // Verlaag cardsToDraw met 1
     if (player.cardsToDraw > 0) {
       player.cardsToDraw -= 1;
+      // Als penalty volledig is getrokken, reset penaltyChain
+      if (player.cardsToDraw === 0 && room.penaltyChain && room.penaltyChain.penaltyTarget === playerIndex) {
+        room.penaltyChain = null;
+      }
     }
 
     // NIET automatisch naar volgende speler - laat speler eerst kijken of er iets mee kan
@@ -391,10 +395,9 @@ function handleSpecialCard(room, card, playerIndex) {
   
   switch (card.value) {
     case '7':
-      // Track penalty chain
+      // Volgende speler krijgt de penalty (stackable)
+      const nextPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
       if (!room.penaltyChain) {
-        // Eerste 7: maak chain aan
-        const nextPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
         room.penaltyChain = {
           totalCards: 2,
           originalSuit: card.suit,
@@ -402,17 +405,14 @@ function handleSpecialCard(room, card, playerIndex) {
           penaltyTarget: nextPlayerIndex
         };
       } else {
-        // Volgende 7: voeg toe aan bestaande chain
         room.penaltyChain.totalCards += 2;
         room.penaltyChain.lastPenaltyPlayerIndex = playerIndex;
         room.penaltyChain.originalSuit = card.suit;
-        // penaltyTarget BLIJFT dezelfde (dezelfde speler krijgt alles)
+        // Elke nieuwe 7 schuift de penalty door naar de volgende speler
+        room.penaltyChain.penaltyTarget = nextPlayerIndex;
       }
-      
-      // Zet cardsToDraw op de penaltyTarget (accumuleert!)
-      const penaltyTargetIndex = room.penaltyChain.penaltyTarget;
-      room.players[penaltyTargetIndex].cardsToDraw = room.penaltyChain.totalCards;
-      // Huidige speler verdedigt, dus eigen penalty vervalt
+
+      room.players[nextPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
       currentPlayer.cardsToDraw = 0;
       break;
     case 'aas':
