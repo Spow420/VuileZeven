@@ -281,6 +281,23 @@ io.on('connection', (socket) => {
     // Reset hasDrawnThisTurn
     player.hasDrawnThisTurn = false;
 
+    // Eerste ronde: als speler past, telt dit ook als "gespeeld"
+    if (room.firstRound && !player.firstRoundPlayed) {
+      player.firstRoundPlayed = true;
+      room.firstRoundPlaysRemaining -= 1;
+      if (room.firstRoundPlaysRemaining <= 0) {
+        room.firstRound = false;
+      }
+    }
+
+    // Verify: als niemand meer firstRoundPlayed=false heeft, zet firstRound=false
+    if (room.firstRound) {
+      const allPlayed = room.players.every(p => p.firstRoundPlayed);
+      if (allPlayed) {
+        room.firstRound = false;
+      }
+    }
+
     // Volgende speler
     nextPlayer(room);
     // Reset voor volgende speler
