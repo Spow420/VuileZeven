@@ -266,13 +266,14 @@ io.on('connection', (socket) => {
 
     const player = room.players[playerIndex];
     
-    // Je mag alleen niet passen als je kaarten moet trekken van een 7
+    // Je mag NIET passen zolang er penaltykaarten wachten (cardsToDraw > 0)
+    // Je MOET alle kaarten trekken voordat je mag passen
     if (player.cardsToDraw > 0) {
       socket.emit('mustDrawOrDefend');
       return;
     }
     
-    // Je moet eerst minstens 1 kaart trekken in je beurt TENZIJ je al kaarten hebt getrokken
+    // Je moet eerst minstens 1 kaart trekken voordat je mag passen
     if (!player.hasDrawnThisTurn) {
       socket.emit('mustDrawFirst');
       return;
