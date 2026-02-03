@@ -175,8 +175,9 @@ io.on('connection', (socket) => {
     }
 
     // Handle speciale kaarten (NIET in eerste ronde)
+    let skipNext = false;
     if (!room.firstRound) {
-      handleSpecialCard(room, card, playerIndex);
+      skipNext = handleSpecialCard(room, card, playerIndex);
     }
 
     // Check of speler gewonnen heeft
@@ -189,17 +190,13 @@ io.on('connection', (socket) => {
     // Reset hasDrawnThisTurn voor huidige speler
     player.hasDrawnThisTurn = false;
 
-    // Volgende speler
-    // Als het een 10 was met cardsToDraw, dan is de currentPlayer al aangepast
-    // Als het een 10 was zonder cardsToDraw, dan blijft de beurt bij deze speler
-    if (card.value === '10' && !hadCardsToDraw) {
-      // 10 zonder 7: blijf bij huidige speler (gaat 1 achteruit en dan terug)
-      // Dus skip de nextPlayer() call
-    } else {
+    // Volgende speler (TENZIJ handleSpecialCard al currentPlayer heeft aangepast)
+    if (!skipNext) {
       nextPlayer(room);
-      // Reset hasDrawnThisTurn voor nieuwe speler
-      room.players[room.currentPlayer].hasDrawnThisTurn = false;
     }
+    // Reset hasDrawnThisTurn voor nieuwe speler
+    room.players[room.currentPlayer].hasDrawnThisTurn = false;
+
     sendGameState(roomCode);
   });
 
@@ -360,6 +357,7 @@ function canPlayCard(card, topCard, cardsToDraw, firstRound) {
 
 function handleSpecialCard(room, card, playerIndex) {
   const currentPlayer = room.players[playerIndex];
+  let skipNextPlayer = false; // Flag om nextPlayer() te skippen
   
   switch (card.value) {
     case '7':
@@ -414,12 +412,23 @@ function handleSpecialCard(room, card, playerIndex) {
           // Reset penalty chain
           room.penaltyChain = null;
         }
+      } else {
+        // Normale 10: draai beurt 1 stap terug
+        // A → B (gooit 10) → beurt gaat terug naar A → na A's beurt → weer naar B
+        const previousPlayerIndex = (playerIndex - room.direction + room.players.length) % room.players.length;
+        room.currentPlayer = previousPlayerIndex;
+        skipNextPlayer = true; // handleSpecialCard heeft al currentPlayer gezet
       }
+      break;
+    case 'aas':
+      skipNextPlayer = true; // handleSpecialCard heeft al currentPlayer gezet (regel 393/399)
       break;
     case 'boer':
       // Boer: speler kan kleur kiezen (wordt apart afgehandeld in playCard)
       break;
   }
+  
+  return skipNextPlayer;
 }
 
 function nextPlayer(room) {
