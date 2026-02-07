@@ -305,6 +305,13 @@ io.on('connection', (socket) => {
 
     // Volgende speler
     nextPlayer(room);
+    
+    // Defensie (Aas/10): extra skip voor verdediger
+    if (room.defensieSkipOccurred) {
+      nextPlayer(room);
+      room.defensieSkipOccurred = false;
+    }
+    
     // Reset voor volgende speler
     room.players[room.currentPlayer].hasDrawnThisTurn = false;
     sendGameState(roomCode);
@@ -422,14 +429,15 @@ function handleSpecialCard(room, card, playerIndex) {
         room.players[gooierIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
         
-        // Gooier moet DIRECT aan de beurt (voor trek)
+        // Gooier moet trekken ZONDER naar volgende te gaan
         room.currentPlayer = gooierIndex;
+        room.defensieSkipOccurred = true; // Flag voor skip verdediger
         
         // Reset chain
         room.penaltyChain = null;
-        skipNextPlayer = false; // nextPlayer() wordt aangeroepen voor volgende speler na trek
+        skipNextPlayer = true; // Geen nextPlayer() nu - gooier trekt eerst
       } else {
-        // Geen penalty: Aas skipt gewoon volgende (normale Aas)
+        // Geen penalty: Aas skipt volgende (normale Aas = +1 skip)
         room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
         skipNextPlayer = false;
       }
@@ -444,12 +452,13 @@ function handleSpecialCard(room, card, playerIndex) {
           room.players[originalPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
           currentPlayer.cardsToDraw = 0;
           
-          // Gooier moet DIRECT aan de beurt (voor trek)
+          // Gooier moet trekken ZONDER naar volgende te gaan
           room.currentPlayer = originalPlayerIndex;
+          room.defensieSkipOccurred = true; // Flag voor skip verdediger
           
           // Reset penalty chain
           room.penaltyChain = null;
-          skipNextPlayer = false; // nextPlayer() moet aangeroepen worden
+          skipNextPlayer = true; // Geen nextPlayer() nu - gooier trekt eerst
         }
       } else {
         // Normale 10: draai beurt 1 stap terug
