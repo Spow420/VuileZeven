@@ -136,7 +136,7 @@ io.on('connection', (socket) => {
     const topCard = room.discardPile[room.discardPile.length - 1] || null;
 
     // Check of kaart gespeeld mag worden
-    if (!canPlayCard(card, topCard, player.cardsToDraw, room.firstRound)) {
+    if (!canPlayCard(card, topCard, player.cardsToDraw, room.firstRound, room.penaltyChain)) {
       socket.emit('invalidMove');
       return;
     }
@@ -246,8 +246,8 @@ io.on('connection', (socket) => {
     // Verlaag cardsToDraw met 1
     if (player.cardsToDraw > 0) {
       player.cardsToDraw -= 1;
-      // Als penalty volledig is getrokken, reset penaltyChain
-      if (player.cardsToDraw === 0 && room.penaltyChain && room.penaltyChain.penaltyTarget === playerIndex) {
+      // Volledig getrokken? Reset chain
+      if (player.cardsToDraw === 0 && room.penaltyChain && room.penaltyChain.currentTarget === playerIndex) {
         room.penaltyChain = null;
       }
     }
@@ -305,13 +305,6 @@ io.on('connection', (socket) => {
 
     // Volgende speler
     nextPlayer(room);
-    
-    // Defensie (Aas/10): extra skip voor verdediger
-    if (room.defensieSkipOccurred) {
-      nextPlayer(room);
-      room.defensieSkipOccurred = false;
-    }
-    
     // Reset voor volgende speler
     room.players[room.currentPlayer].hasDrawnThisTurn = false;
     sendGameState(roomCode);
@@ -360,28 +353,36 @@ function shuffleDeck(deck) {
   return shuffled;
 }
 
-function canPlayCard(card, topCard, cardsToDraw, firstRound) {
-  // In de eerste ronde kun je alleen klavers gooien (specials mogen wel, maar zijn niet actief)
+function canPlayCard(card, topCard, cardsToDraw, firstRound, penaltyChain) {
+  // In de eerste ronde kun je alleen klavers gooien
   if (firstRound) {
     return card.suit === 'klaver';
   }
 
-  // Als er nog geen kaart in het midden ligt, mag je elke kaart spelen (BEHALVE Boer alleen als geen penalty)
+  // Als er nog geen kaart in het midden ligt, mag je elke kaart spelen (BEHALVE Boer zonder defensie)
   if (!topCard) {
     if (card.value === 'boer' && cardsToDraw > 0) {
-      return false; // Boer mag niet als je moet verdedigen
+      return false;
     }
     return true;
   }
 
-  // Als je kaarten moet trekken, kun je ALLEEN een 7, Aas of 10 spelen (om te verdedigen)
-  // Boer mag NIET verdedigen!
+  // DEFENSIE MODE: penalty chain actief (cardsToDraw > 0)
+  if (cardsToDraw > 0 && penaltyChain) {
+    // Kan ALLEEN 7/10/Aas verdedigen met DEZELFDE SUIT
+    if (card.value === '7' || card.value === '10' || card.value === 'aas') {
+      return card.suit === penaltyChain.originalSuit;
+    }
+    return false; // Alles anders mag niet
+  }
+
+  // Normale verdediging zonder chain (cardsToDraw > 0 maar geen chain)
   if (cardsToDraw > 0) {
     if (card.value === '7' || card.value === 'aas' || card.value === '10') {
       const effectiveSuit = topCard.chosenSuit || topCard.suit;
       return card.suit === effectiveSuit || card.value === topCard.value;
     }
-    return false; // Alles anders (incl. Boer) mag niet
+    return false;
   }
 
   // Boer kan altijd gespeeld worden (TENZIJ je moet verdedigen)
@@ -398,77 +399,60 @@ function canPlayCard(card, topCard, cardsToDraw, firstRound) {
 
 function handleSpecialCard(room, card, playerIndex) {
   const currentPlayer = room.players[playerIndex];
-  let skipNextPlayer = false; // Flag om nextPlayer() te skippen
+  let skipNextPlayer = false;
   
   switch (card.value) {
     case '7':
-      // Volgende speler krijgt de penalty (stackable)
+      // 7 altijd: penalty gaat naar volgende (forward)
       const nextPlayerIndex = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
+      
       if (!room.penaltyChain) {
+        // NIEUWE 7: start chain
         room.penaltyChain = {
           totalCards: 2,
           originalSuit: card.suit,
-          lastPenaltyPlayerIndex: playerIndex,
-          penaltyTarget: nextPlayerIndex
+          lastPenaltyPlayerIndex: playerIndex, // wie gooide deze 7
+          currentTarget: nextPlayerIndex // wie moet nu trekken
         };
       } else {
+        // STACKING 7: voeg toe en shift target forward
         room.penaltyChain.totalCards += 2;
         room.penaltyChain.lastPenaltyPlayerIndex = playerIndex;
         room.penaltyChain.originalSuit = card.suit;
-        // Elke nieuwe 7 schuift de penalty door naar de volgende speler
-        room.penaltyChain.penaltyTarget = nextPlayerIndex;
+        room.penaltyChain.currentTarget = nextPlayerIndex;
       }
-
+      
       room.players[nextPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
       currentPlayer.cardsToDraw = 0;
+      skipNextPlayer = false; // nextPlayer() gaat naar target
       break;
+      
     case 'aas':
-      // Aas defensie: kaarten terug naar gooier + skipped volgende speler
+    case '10':
+      // DEFENSIE tegen penalty (moeten dezelfde suit hebben - checked in canPlayCard)
       if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
-        const gooierIndex = room.penaltyChain.lastPenaltyPlayerIndex;
-        room.players[gooierIndex].cardsToDraw = room.penaltyChain.totalCards;
+        // Defensie: penalty TERUG naar vorige
+        const prevPlayer = room.penaltyChain.lastPenaltyPlayerIndex;
+        room.players[prevPlayer].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
         
-        // Gooier moet trekken ZONDER naar volgende te gaan
-        room.currentPlayer = gooierIndex;
-        room.defensieSkipOccurred = true; // Flag voor skip verdediger
+        // Update chain: huida wordt nu new "lastPenaltyPlayerIndex" voor volgende verdediger
+        room.penaltyChain.lastPenaltyPlayerIndex = playerIndex;
+        room.penaltyChain.originalSuit = card.suit;
+        room.penaltyChain.currentTarget = prevPlayer;
         
-        // Reset chain
-        room.penaltyChain = null;
-        skipNextPlayer = true; // Geen nextPlayer() nu - gooier trekt eerst
+        // Vorige must play next (for draw or re-defend)
+        room.currentPlayer = prevPlayer;
+        skipNextPlayer = true;
       } else {
-        // Geen penalty: Aas skipt volgende (normale Aas = +1 skip)
+        // Normale Aas/10 (geen penalty): skip volgende
         room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
         skipNextPlayer = false;
       }
       break;
-    case '10':
-      // Reflecteer penalty terug naar originele speler
-      if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
-        // Check of kaart dezelfde suit als originele 7
-        if (card.suit === room.penaltyChain.originalSuit) {
-          // Kaats terug naar wie de penalty gooide
-          const originalPlayerIndex = room.penaltyChain.lastPenaltyPlayerIndex;
-          room.players[originalPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
-          currentPlayer.cardsToDraw = 0;
-          
-          // Gooier moet trekken ZONDER naar volgende te gaan
-          room.currentPlayer = originalPlayerIndex;
-          room.defensieSkipOccurred = true; // Flag voor skip verdediger
-          
-          // Reset penalty chain
-          room.penaltyChain = null;
-          skipNextPlayer = true; // Geen nextPlayer() nu - gooier trekt eerst
-        }
-      } else {
-        // Normale 10: draai beurt 1 stap terug
-        const previousPlayerIndex = (playerIndex - room.direction + room.players.length) % room.players.length;
-        room.currentPlayer = previousPlayerIndex;
-        skipNextPlayer = true;
-      }
-      break;
+      
     case 'boer':
-      // Boer: speler kan kleur kiezen (wordt apart afgehandeld in playCard)
+      // Boer: kleur kiezen (afgehandeld in playCard)
       break;
   }
   
@@ -488,7 +472,7 @@ function sendGameState(roomCode) {
     if (index === room.currentPlayer) {
       const topCard = room.discardPile[room.discardPile.length - 1];
       hasPlayableCard = player.hand.some(card => 
-        canPlayCard(card, topCard, player.cardsToDraw, room.firstRound)
+        canPlayCard(card, topCard, player.cardsToDraw, room.firstRound, room.penaltyChain)
       );
     }
     
