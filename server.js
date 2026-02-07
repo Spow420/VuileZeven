@@ -416,24 +416,22 @@ function handleSpecialCard(room, card, playerIndex) {
       currentPlayer.cardsToDraw = 0;
       break;
     case 'aas':
-      // Aas verdedigt tegen penalty (teruggaan naar gooier) OF skipt normale volgende speler
+      // Aas defensie: kaarten terug naar gooier + skipped volgende speler
       if (room.penaltyChain && room.penaltyChain.totalCards > 0) {
-        // Aas verdedigt: kaarten gaan terug naar wie de penalty gooide
         const gooierIndex = room.penaltyChain.lastPenaltyPlayerIndex;
         room.players[gooierIndex].cardsToDraw = room.penaltyChain.totalCards;
         currentPlayer.cardsToDraw = 0;
         
-        // Zet beurt naar speler vóór gooier (zodat beurt gaat naar gooier na nextPlayer)
-        room.currentPlayer = (gooierIndex - room.direction + room.players.length) % room.players.length;
+        // Gooier moet DIRECT aan de beurt (voor trek)
+        room.currentPlayer = gooierIndex;
         
         // Reset chain
         room.penaltyChain = null;
-        skipNextPlayer = true; // handleSpecialCard heeft currentPlayer gezet
+        skipNextPlayer = false; // nextPlayer() wordt aangeroepen voor volgende speler na trek
       } else {
-        // Geen penalty: Aas skipt gewoon de volgende speler (normale Aas)
-        // nextPlayer() wordt 2x aangeroepen (1 extra skip)
+        // Geen penalty: Aas skipt gewoon volgende (normale Aas)
         room.currentPlayer = (room.currentPlayer + room.direction + room.players.length) % room.players.length;
-        skipNextPlayer = false; // nextPlayer() moet nog 1x aangeroepen worden voor skip
+        skipNextPlayer = false;
       }
       break;
     case '10':
@@ -446,12 +444,12 @@ function handleSpecialCard(room, card, playerIndex) {
           room.players[originalPlayerIndex].cardsToDraw = room.penaltyChain.totalCards;
           currentPlayer.cardsToDraw = 0;
           
-          // Zet huidige speler naar degene vóór die (zodat beurt weer naar huidige gaat)
-          room.currentPlayer = (originalPlayerIndex - room.direction + room.players.length) % room.players.length;
+          // Gooier moet DIRECT aan de beurt (voor trek)
+          room.currentPlayer = originalPlayerIndex;
           
           // Reset penalty chain
           room.penaltyChain = null;
-          skipNextPlayer = true; // handleSpecialCard heeft currentPlayer gezet
+          skipNextPlayer = false; // nextPlayer() moet aangeroepen worden
         }
       } else {
         // Normale 10: draai beurt 1 stap terug
