@@ -168,11 +168,6 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// God Mode Dashboard
-app.get('/god', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin-god.html'));
-});
-
 // ========================
 // STATS ENDPOINTS
 // ========================
