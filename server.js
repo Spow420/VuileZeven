@@ -168,6 +168,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// God Mode Dashboard
+app.get('/god', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin-god.html'));
+});
+
 // ========================
 // STATS ENDPOINTS
 // ========================
@@ -190,6 +195,33 @@ app.get('/api/visitors', (req, res) => {
     current: visitorStats.currentPlayers,
     recentHistory: visitorStats.visitHistory.slice(-50),
     totalSessions: visitorStats.totalVisitors
+  });
+});
+
+// God Mode: Get all rooms data
+app.get('/api/rooms', (req, res) => {
+  const roomsData = Object.entries(rooms).map(([roomCode, room]) => ({
+    roomCode,
+    gameStarted: room.gameStarted,
+    playerCount: room.players.length,
+    players: room.players.map(p => ({
+      id: p.id,
+      name: p.name,
+      cardCount: p.hand.length,
+      cards: p.hand,
+      cardsToDraw: p.cardsToDraw,
+      hasDrawnThisTurn: p.hasDrawnThisTurn
+    })),
+    discardPile: room.discardPile,
+    deckCount: room.deck.length,
+    currentPlayer: room.players[room.currentPlayer]?.name || 'N/A',
+    direction: room.direction === 1 ? '→' : '←'
+  }));
+
+  res.json({
+    timestamp: new Date().toISOString(),
+    totalRooms: Object.keys(rooms).length,
+    rooms: roomsData
   });
 });
 
