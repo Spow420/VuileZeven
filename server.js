@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
+const fs = require('fs');
+const path = require('path');
 const io = require('socket.io')(http, {
   cors: {
     origin: [
@@ -13,9 +15,76 @@ const io = require('socket.io')(http, {
   },
   transports: ['websocket']
 });
-const path = require('path');
 
 const PORT = process.env.PORT || 3000;
+
+// ========================
+// VISITOR TRACKING SYSTEM
+// ========================
+const visitorStats = {
+  totalVisitors: 0,
+  currentPlayers: [],
+  activeRooms: [],
+  visitHistory: [],
+  peakConcurrent: 0,
+  startTime: new Date()
+};
+
+function trackVisitor(socketId, playerName, roomCode) {
+  const timestamp = new Date().toISOString();
+  
+  // Check if new visitor
+  const isNewVisitor = !visitorStats.visitHistory.find(v => v.socketId === socketId);
+  if (isNewVisitor) {
+    visitorStats.totalVisitors++;
+  }
+  
+  // Add to current players
+  if (!visitorStats.currentPlayers.find(p => p.socketId === socketId)) {
+    visitorStats.currentPlayers.push({
+      socketId,
+      playerName,
+      roomCode,
+      joinedAt: timestamp
+    });
+  }
+  
+  // Track in history
+  visitorStats.visitHistory.push({
+    socketId,
+    playerName,
+    roomCode,
+    action: 'joined',
+    timestamp
+  });
+  
+  // Update peak concurrent
+  if (visitorStats.currentPlayers.length > visitorStats.peakConcurrent) {
+    visitorStats.peakConcurrent = visitorStats.currentPlayers.length;
+  }
+  
+  console.log(`[VISITOR] ${playerName} joined @ ${timestamp} | Total: ${visitorStats.totalVisitors} | Active: ${visitorStats.currentPlayers.length}`);
+}
+
+function removeVisitor(socketId) {
+  const visitor = visitorStats.currentPlayers.find(p => p.socketId === socketId);
+  if (visitor) {
+    visitorStats.visitHistory.push({
+      ...visitor,
+      action: 'left',
+      timestamp: new Date().toISOString()
+    });
+    visitorStats.currentPlayers = visitorStats.currentPlayers.filter(p => p.socketId !== socketId);
+    console.log(`[VISITOR] ${visitor.playerName} left | Active: ${visitorStats.currentPlayers.length}`);
+  }
+}
+
+// Save stats to file every 5 minutes
+setInterval(() => {
+  const statsFile = path.join(__dirname, 'visitor-stats.json');
+  fs.writeFileSync(statsFile, JSON.stringify(visitorStats, null, 2));
+  console.log('[STATS] Saved visitor statistics to file');
+}, 300000);
 
 // Security: Rate limiting & request tracking
 const requestLimits = {};
@@ -70,17 +139,134 @@ app.use(express.static('public', {
   etag: false
 }));
 
-// Security headers
+// HTTPS redirect (if behind proxy like Render)
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && req.header('x-forwarded-proto') !== 'https') {
+    res.redirect(301, `https://${req.header('host')}${req.url}`);
+  } else {
+    next();
+  }
+});
+
+// Security headers (SSL + XSS + Clickjacking protection)
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';");
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   next();
 });
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ========================
+// STATS ENDPOINTS
+// ========================
+app.get('/api/stats', (req, res) => {
+  const uptime = Date.now() - new Date(visitorStats.startTime).getTime();
+  res.json({
+    status: 'online',
+    uptime: `${Math.floor(uptime / 1000 / 60)} minuten`,
+    totalVisitors: visitorStats.totalVisitors,
+    currentActive: visitorStats.currentPlayers.length,
+    peakConcurrent: visitorStats.peakConcurrent,
+    activeGames: visitorStats.currentPlayers.filter((p, i, arr) => arr.filter(x => x.roomCode === p.roomCode).length > 0).length,
+    serverStart: visitorStats.startTime,
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/visitors', (req, res) => {
+  res.json({
+    current: visitorStats.currentPlayers,
+    recentHistory: visitorStats.visitHistory.slice(-50),
+    totalSessions: visitorStats.totalVisitors
+  });
+});
+
+app.get('/stats', (req, res) => {
+  const uptime = Date.now() - new Date(visitorStats.startTime).getTime();
+  const uptimeMinutes = Math.floor(uptime / 1000 / 60);
+  const uptimeHours = Math.floor(uptimeMinutes / 60);
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>VuileZeven Stats</title>
+      <style>
+        body { font-family: Arial; background: #1a1a1a; color: #fff; margin: 20px; }
+        h1 { color: #4CAF50; }
+        .stat { background: #2a2a2a; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #4CAF50; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #4CAF50; }
+        .players-list { background: #2a2a2a; padding: 15px; margin-top: 20px; border-radius: 5px; }
+        .player-item { padding: 10px; background: #1a1a1a; margin: 5px 0; border-radius: 3px; }
+        .online { color: #4CAF50; }
+      </style>
+    </head>
+    <body>
+      <h1>🎮 VuileZeven Live Stats</h1>
+      
+      <div class="stat">
+        <strong>Status:</strong> <span class="online">● Online</span>
+      </div>
+      
+      <div class="stat">
+        <strong>Uptime:</strong>
+        <div class="stat-value">${uptimeHours}h ${uptimeMinutes % 60}m</div>
+      </div>
+      
+      <div class="stat">
+        <strong>Totale Bezoekers:</strong>
+        <div class="stat-value">${visitorStats.totalVisitors}</div>
+      </div>
+      
+      <div class="stat">
+        <strong>Actieve Spelers:</strong>
+        <div class="stat-value">${visitorStats.currentPlayers.length}</div>
+      </div>
+      
+      <div class="stat">
+        <strong>Peak Concurrent:</strong>
+        <div class="stat-value">${visitorStats.peakConcurrent}</div>
+      </div>
+      
+      <div class="stat">
+        <strong>Server Start:</strong>
+        <div>${visitorStats.startTime}</div>
+      </div>
+      
+      <div class="players-list">
+        <h3>👥 Actieve Spelers:</h3>
+        ${visitorStats.currentPlayers.length > 0 ? 
+          visitorStats.currentPlayers.map(p => `
+            <div class="player-item">
+              <strong>${p.playerName}</strong> in room <code>${p.roomCode}</code> (sinds ${new Date(p.joinedAt).toLocaleTimeString('nl-NL')})
+            </div>
+          `).join('') 
+          : '<p>Geen spelers online</p>'}
+      </div>
+      
+      <div class="players-list">
+        <h3>📊 Recente Activiteit:</h3>
+        ${visitorStats.visitHistory.slice(-20).reverse().map(event => `
+          <div class="player-item">
+            <strong>${event.playerName}</strong> ${event.action} (${new Date(event.timestamp).toLocaleTimeString('nl-NL')})
+          </div>
+        `).join('')}
+      </div>
+      
+      <hr style="opacity: 0.3;">
+      <p style="opacity: 0.7; font-size: 12px;">Auto-refresh elke 10s</p>
+      <script>setInterval(() => location.reload(), 10000);</script>
+    </body>
+    </html>
+  `;
+  res.send(html);
 });
 
 // Game state
@@ -108,6 +294,9 @@ io.on('connection', (socket) => {
       socket.emit('invalidRoomCode');
       return;
     }
+    
+    // Track visitor
+    trackVisitor(socket.id, playerName, roomCode);
     
     // Maak room aan als deze niet bestaat
     if (!rooms[roomCode]) {
@@ -452,6 +641,9 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('Speler disconnected:', socket.id);
     
+    // Track disconnect
+    removeVisitor(socket.id);
+    
     // Clean up rate limiting
     delete requestLimits[socket.id];
     
@@ -648,6 +840,10 @@ function sendGameState(roomCode) {
 }
 
 http.listen(PORT, () => {
-  console.log(`Server veilig draait op port ${PORT}`);
-  console.log('Security checks active: Input validation, Rate limiting, Player verification');
+  console.log(`\n🎮 VuileZeven Server Started`);
+  console.log(`✅ Secure (HTTPS/WSS enforced)`);
+  console.log(`✅ Port: ${PORT}`);
+  console.log(`📊 Stats available at: /stats`);
+  console.log(`📊 API available at: /api/stats\n`);
+  console.log('━'.repeat(50));
 });
