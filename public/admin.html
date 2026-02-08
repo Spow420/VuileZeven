@@ -895,10 +895,28 @@
     }
 
     function showRoomDetail(roomCode) {
-      if (!lastRoomData || !Array.isArray(lastRoomData)) return;
+      console.log('🔍 Attempting to show room detail for:', roomCode);
+      console.log('📦 lastRoomData:', lastRoomData);
+      
+      if (!lastRoomData) {
+        console.error('❌ lastRoomData is null/undefined');
+        return;
+      }
+
+      if (!Array.isArray(lastRoomData)) {
+        console.error('❌ lastRoomData is not an array. Type:', typeof lastRoomData);
+        return;
+      }
 
       const room = lastRoomData.find(r => r.roomCode === roomCode);
-      if (!room) return;
+      
+      if (!room) {
+        console.error('❌ Room not found! Looking for:', roomCode);
+        console.log('Available rooms:', lastRoomData.map(r => r.roomCode));
+        return;
+      }
+
+      console.log('✅ Found room:', room);
 
       const modalTitle = document.getElementById('modalTitle');
       const modalPlayers = document.getElementById('modalPlayers');
@@ -941,6 +959,7 @@
 
       modalPlayers.innerHTML = playersHtml;
       document.getElementById('roomModal').classList.add('show');
+      console.log('✅ Modal shown successfully');
     }
 
     function closeRoomModal() {
