@@ -821,8 +821,12 @@ function canPlayCard(card, topCard, cardsToDraw, firstRound, penaltyChain) {
 
   // DEFENSIE MODE: penalty chain actief (cardsToDraw > 0)
   if (cardsToDraw > 0 && penaltyChain) {
-    // Kan ALLEEN 7/10/Aas verdedigen met DEZELFDE SUIT
-    if (card.value === '7' || card.value === '10' || card.value === 'aas') {
+    // Een 7 mag ALTIJD worden gespeeld om het penalty forward te sturen (stapelen)
+    if (card.value === '7') {
+      return true;
+    }
+    // Kan ALLEEN 10/Aas verdedigen met DEZELFDE SUIT
+    if (card.value === '10' || card.value === 'aas') {
       return card.suit === penaltyChain.originalSuit;
     }
     return false; // Alles anders mag niet
@@ -830,7 +834,11 @@ function canPlayCard(card, topCard, cardsToDraw, firstRound, penaltyChain) {
 
   // Normale verdediging zonder chain (cardsToDraw > 0 maar geen chain)
   if (cardsToDraw > 0) {
-    if (card.value === '7' || card.value === 'aas' || card.value === '10') {
+    // Een 7 mag hier ook ALTIJD (start nieuwe chain)
+    if (card.value === '7') {
+      return true;
+    }
+    if (card.value === 'aas' || card.value === '10') {
       const effectiveSuit = topCard.chosenSuit || topCard.suit;
       return card.suit === effectiveSuit || card.value === topCard.value;
     }
