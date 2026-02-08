@@ -926,7 +926,7 @@
       const playersHtml = (room.players || []).map(player => {
         const cardsHtml = (player.cards || [])
           .map(card => {
-            const [suit, value] = card.split('-');
+            const { suit, value } = card;
             const emoji = suitEmoji[suit] || '?';
             return `<div class="card ${suit}">${emoji} ${value}</div>`;
           })
