@@ -535,9 +535,33 @@ button:disabled {
     }
 
     .card {
-        width: 80px;
-        height: 120px;
-        font-size: 14px;
+        width: 56px;
+        height: 84px;
+        font-size: 12px;
+        padding: 3px;
+    }
+
+    .corner-value {
+        font-size: 10px;
+        font-weight: 900;
+    }
+
+    .corner-suit {
+        font-size: 8px;
+        margin-top: 0px;
+    }
+
+    .center-suit {
+        font-size: 12px;
+    }
+
+    .face-value {
+        font-size: 24px;
+    }
+
+    .face-suit {
+        font-size: 28px;
+        margin-top: 1px;
     }
 
     .players-circle {
@@ -561,8 +585,8 @@ button:disabled {
     }
 
     .hand {
-        gap: 8px;
-        min-height: 130px;
+        gap: 6px;
+        min-height: 100px;
     }
 
     .bottom-section {

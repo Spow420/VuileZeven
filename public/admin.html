@@ -814,31 +814,30 @@
         const stats = await statsRes.json();
         const roomsData = await roomsRes.json();
 
-        lastRoomData = roomsData;
+        lastRoomData = roomsData.rooms || [];
 
         // Update stats
         document.getElementById('totalVisitors').textContent = stats.totalVisitors || 0;
         document.getElementById('activePlayers').textContent = stats.currentActive || 0;
         document.getElementById('peakConcurrent').textContent = stats.peakConcurrent || 0;
-        document.getElementById('activeRooms').textContent = Object.keys(roomsData).length || 0;
+        document.getElementById('activeRooms').textContent = (roomsData.rooms?.length || 0);
         document.getElementById('activeCount').textContent = stats.currentActive || 0;
         document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('nl-NL');
 
         // Render rooms
         const roomsContainer = document.getElementById('roomsContainer');
-        const roomCount = Object.keys(roomsData).length;
+        const roomCount = roomsData.rooms?.length || 0;
 
         if (roomCount === 0) {
           roomsContainer.innerHTML = '<div class="empty-state">Geen actieve games op dit moment...</div>';
           return;
         }
 
-        roomsContainer.innerHTML = Object.entries(roomsData)
-          .filter(([code]) => code !== 'totalRooms')
-          .map(([roomCode, room]) => `
-            <div class="room-card" onclick="showRoomDetail('${roomCode}')">
+        roomsContainer.innerHTML = (roomsData.rooms || [])
+          .map((room) => `
+            <div class="room-card" onclick="showRoomDetail('${room.roomCode}')">
               <div class="room-header">
-                <div class="room-title">🃏 ${roomCode}</div>
+                <div class="room-title">🃏 ${room.roomCode}</div>
                 <div class="room-status ${room.gameStarted ? '' : 'inactive'}">
                   ${room.gameStarted ? '▶ In Spel' : '⏸ Wachten'}
                 </div>
@@ -878,16 +877,18 @@
 
               <div class="click-hint">👆 Klik voor God POV</div>
             </div>
-          `).join('');
+`).join('');
       } catch (error) {
         console.error('Fetch error:', error);
       }
     }
 
     function showRoomDetail(roomCode) {
-      if (!lastRoomData || !lastRoomData[roomCode]) return;
+      if (!lastRoomData || !Array.isArray(lastRoomData)) return;
 
-      const room = lastRoomData[roomCode];
+      const room = lastRoomData.find(r => r.roomCode === roomCode);
+      if (!room) return;
+
       const modalTitle = document.getElementById('modalTitle');
       const modalPlayers = document.getElementById('modalPlayers');
 
