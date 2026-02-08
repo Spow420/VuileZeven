@@ -746,3 +746,105 @@ button:disabled {
     display: block;
     margin-bottom: 10px;
 }
+/* Victory Modal */
+.victory-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    animation: fadeIn 0.5s ease;
+}
+
+.victory-modal.show {
+    display: flex;
+}
+
+.victory-content {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--gold-soft) 50%, var(--accent-2) 100%);
+    padding: 60px 80px;
+    border-radius: 30px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(212, 175, 55, 0.4), 
+                0 0 40px rgba(212, 175, 55, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    max-width: 90%;
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.victory-title {
+    font-size: 80px;
+    font-weight: bold;
+    color: #0b1f16;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3),
+                 -1px -1px 3px rgba(255, 255, 255, 0.5);
+    margin: 20px 0;
+    letter-spacing: 4px;
+}
+
+.victory-winner {
+    font-size: 48px;
+    font-weight: bold;
+    color: #0b1f16;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    margin: 30px 0;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 20px 40px;
+    border-radius: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.victory-stars {
+    font-size: 60px;
+    display: block;
+    animation: twinkle 0.8s infinite;
+}
+
+.victory-subtitle {
+    font-size: 18px;
+    color: #0b1f16;
+    opacity: 0.8;
+    margin-top: 30px;
+    font-style: italic;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.5) rotate(-5deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05) rotate(2deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+@keyframes twinkle {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.1);
+    }
+}

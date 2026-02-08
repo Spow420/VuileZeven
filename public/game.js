@@ -229,10 +229,18 @@ socket.on('gameState', (data) => {
 });
 
 socket.on('gameOver', (data) => {
-    showMessage(`🎉 ${data.winner} heeft gewonnen! 🎉`);
+    // Show victory modal
+    const victoryModal = document.getElementById('victoryModal');
+    const victoryWinner = document.getElementById('victoryWinner');
+    
+    victoryWinner.textContent = `🏆 ${data.winner} 🏆`;
+    victoryModal.classList.add('show');
+    
+    // Return to lobby after 5 seconds
     setTimeout(() => {
+        victoryModal.classList.remove('show');
         showScreen(lobbyScreen);
-    }, 3000);
+    }, 5000);
 });
 
 socket.on('roomFull', () => {
