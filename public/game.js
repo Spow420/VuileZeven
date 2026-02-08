@@ -1,7 +1,16 @@
 // Verbind met server (lokaal of extern)
 const serverURL = window.location.hostname === 'localhost' ? undefined : 'https://vuilezeven.onrender.com';
 const socket = serverURL
-    ? io(serverURL, { transports: ['websocket', 'polling'], timeout: 20000 })
+    ? io(serverURL, {
+        transports: ['websocket', 'polling'],
+        timeout: 30000,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: Infinity,
+        pingInterval: 25000,
+        pingTimeout: 20000
+      })
     : io();
 
 socket.on('connect', () => {

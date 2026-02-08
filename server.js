@@ -13,7 +13,12 @@ const io = require('socket.io')(http, {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  transports: ['websocket']
+  transports: ['websocket'],
+  pingInterval: 25000,
+  pingTimeout: 20000,
+  upgradeTimeout: 30000,
+  maxHttpBufferSize: 1e6,
+  allowEIO3: true
 });
 
 const PORT = process.env.PORT || 3000;
@@ -356,25 +361,56 @@ io.on('connection', (socket) => {
 
     const room = rooms[roomCode];
 
+    // Check for reconnect: player with same name that was disconnected
+    const existingPlayer = room.players.find(p => p.name === playerName);
+    
+    if (existingPlayer) {
+      if (!existingPlayer.disconnected) {
+        // Player with this name already in room
+        socket.emit('nameTaken');
+        return;
+      } else {
+        // Reconnect: restore disconnected player
+        console.log(`🔄 ${playerName} reconnecting to room ${roomCode}`);
+        existingPlayer.id = socket.id;
+        existingPlayer.disconnected = false;
+        existingPlayer.disconnectTime = null;
+        socket.join(roomCode);
+        socket.roomCode = roomCode;
+        
+        // Notify players of reconnect
+        io.to(roomCode).emit('playerReconnected', {
+          playerName: playerName,
+          message: `${playerName} is terug!`
+        });
+        
+        // Send updated game state
+        if (room.gameStarted) {
+          sendGameState(roomCode);
+        } else {
+          io.to(roomCode).emit('roomUpdate', {
+            players: room.players.map(p => ({ name: p.name, cardCount: p.hand.length })),
+            gameStarted: room.gameStarted
+          });
+        }
+        return;
+      }
+    }
+
     // Check of room vol is
     if (room.players.length >= 4) {
       socket.emit('roomFull');
       return;
     }
 
-    // Check of naam al bestaat
-    if (room.players.some(p => p.name === playerName)) {
-      socket.emit('nameTaken');
-      return;
-    }
-
-    // Voeg speler toe
+    // Voeg speler toe als nieuw
     const player = {
       id: socket.id,
       name: playerName,
       hand: [],
       cardsToDraw: 0,
-      hasDrawnThisTurn: false
+      hasDrawnThisTurn: false,
+      disconnected: false
     };
 
     room.players.push(player);
@@ -692,16 +728,56 @@ io.on('connection', (socket) => {
     const roomCode = socket.roomCode;
     if (roomCode && rooms[roomCode]) {
       const room = rooms[roomCode];
-      room.players = room.players.filter(p => p.id !== socket.id);
-
-      if (room.players.length === 0) {
-        delete rooms[roomCode];
-      } else {
-        io.to(roomCode).emit('roomUpdate', {
-          players: room.players.map(p => ({ name: p.name, cardCount: p.hand.length })),
-          gameStarted: room.gameStarted
+      const playerIndex = room.players.findIndex(p => p.id === socket.id);
+      
+      if (playerIndex !== -1) {
+        const player = room.players[playerIndex];
+        
+        // Mark player as disconnected but keep their data for 5 minutes (reconnect window)
+        player.disconnected = true;
+        player.disconnectTime = Date.now();
+        
+        console.log(`🔌 ${player.name} disconnected from room ${roomCode} (reconnect window: 5 min)`);
+        
+        // If disconnected player was the current player, move to next player
+        if (room.gameStarted && playerIndex === room.currentPlayer) {
+          console.log(`⏭️ Skipping disconnected player's turn`);
+          nextPlayer(room);
+        }
+        
+        // Notify other players
+        io.to(roomCode).emit('playerDisconnected', {
+          playerName: player.name,
+          message: `${player.name} is even weg (wij wachten 5 minuten...)`
         });
+        
+        // Resume game state for remaining players
+        if (room.gameStarted) {
+          sendGameState(roomCode);
+        } else {
+          io.to(roomCode).emit('roomUpdate', {
+            players: room.players.map(p => ({ name: p.name, cardCount: p.hand.length })),
+            gameStarted: room.gameStarted
+          });
+        }
       }
+      
+      // Auto-cleanup: remove disconnected players after 5 minutes
+      setTimeout(() => {
+        if (!rooms[roomCode]) return;
+        const room = rooms[roomCode];
+        const reconnectedPlayers = room.players.filter(p => p.disconnected && Date.now() - p.disconnectTime > 300000);
+        
+        reconnectedPlayers.forEach(p => {
+          console.log(`⏰ Removing ${p.name} due to timeout (5 min passed)`);
+          room.players = room.players.filter(x => x.id !== p.id);
+        });
+        
+        // If all players gone or room empty, delete room
+        if (room.players.length === 0) {
+          delete rooms[roomCode];
+        }
+      }, 300000); // 5 minutes
     }
   });
 });
