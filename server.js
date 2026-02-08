@@ -4,19 +4,80 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
     origin: [
-      'https://vuilezeven.netlify.app',
-      'https://willowy-malabi-cbe9c3.netlify.app',
-      'http://localhost:3000'
+      'https://quanigma.com',
+      'https://www.quanigma.com',
+      'https://monumental-cheesecake-c08ffb.netlify.app'
     ],
-    methods: ['GET', 'POST']
-  }
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket']
 });
 const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files
-app.use(express.static('public'));
+// Security: Rate limiting & request tracking
+const requestLimits = {};
+const MAX_REQUESTS_PER_MINUTE = 60;
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+
+function checkRateLimit(socketId) {
+  const now = Date.now();
+  if (!requestLimits[socketId]) {
+    requestLimits[socketId] = { count: 1, startTime: now };
+    return true;
+  }
+  
+  const elapsed = now - requestLimits[socketId].startTime;
+  if (elapsed > RATE_LIMIT_WINDOW) {
+    requestLimits[socketId] = { count: 1, startTime: now };
+    return true;
+  }
+  
+  requestLimits[socketId].count++;
+  return requestLimits[socketId].count <= MAX_REQUESTS_PER_MINUTE;
+}
+
+// Input validation helpers
+function validatePlayerName(name) {
+  if (!name || typeof name !== 'string') return null;
+  const cleaned = name.trim().substring(0, 20);
+  if (!/^[a-zA-Z0-9 ]{1,20}$/.test(cleaned)) return null;
+  return cleaned;
+}
+
+function validateRoomCode(code) {
+  if (!code || typeof code !== 'string') return null;
+  const cleaned = code.trim().toUpperCase().substring(0, 10);
+  if (!/^[A-Z0-9]{1,10}$/.test(cleaned)) return null;
+  return cleaned;
+}
+
+function validateCardIndex(index, handSize) {
+  if (!Number.isInteger(index)) return false;
+  return index >= 0 && index < handSize;
+}
+
+function validateSuit(suit) {
+  const validSuits = ['harten', 'ruiten', 'klaver', 'schoppen'];
+  return validSuits.includes(suit);
+}
+
+// Serve static files (with security)
+app.use(express.static('public', {
+  maxAge: '1h',
+  etag: false
+}));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -29,7 +90,24 @@ io.on('connection', (socket) => {
   console.log('Speler verbonden:', socket.id);
 
   socket.on('joinRoom', (data) => {
-    const { roomCode, playerName } = data;
+    // Rate limiting
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('rateLimited', { message: 'Te veel requests' });
+      return;
+    }
+
+    // Input validation
+    const playerName = validatePlayerName(data?.playerName);
+    const roomCode = validateRoomCode(data?.roomCode);
+    
+    if (!playerName) {
+      socket.emit('invalidPlayerName');
+      return;
+    }
+    if (!roomCode) {
+      socket.emit('invalidRoomCode');
+      return;
+    }
     
     // Maak room aan als deze niet bestaat
     if (!rooms[roomCode]) {
@@ -82,10 +160,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('startGame', () => {
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('rateLimited');
+      return;
+    }
+
     const roomCode = socket.roomCode;
     if (!roomCode || !rooms[roomCode]) return;
 
     const room = rooms[roomCode];
+    
+    // Security: Verify socket is in room
+    const playerIndex = room.players.findIndex(p => p.id === socket.id);
+    if (playerIndex === -1) {
+      socket.emit('notInRoom');
+      return;
+    }
 
     // Check of er genoeg spelers zijn (minimaal 3)
     if (room.players.length < 3) {
@@ -118,12 +208,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('playCard', (data) => {
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('rateLimited');
+      return;
+    }
+
     const roomCode = socket.roomCode;
     if (!roomCode || !rooms[roomCode]) return;
 
     const room = rooms[roomCode];
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     
+    // Security: Verify player exists and it's their turn
+    if (playerIndex === -1) {
+      socket.emit('notInRoom');
+      return;
+    }
     if (playerIndex !== room.currentPlayer) {
       socket.emit('notYourTurn');
       return;
@@ -131,8 +231,25 @@ io.on('connection', (socket) => {
 
     const player = room.players[playerIndex];
 
-    const { cardIndex, chosenSuit } = data;
+    // Input validation
+    const cardIndex = data?.cardIndex;
+    if (!validateCardIndex(cardIndex, player.hand.length)) {
+      socket.emit('invalidCardIndex');
+      return;
+    }
+    
     const card = player.hand[cardIndex];
+    if (!card) {
+      socket.emit('cardNotFound');
+      return;
+    }
+    
+    // Validate chosen suit if provided
+    const chosenSuit = data?.chosenSuit;
+    if (chosenSuit && !validateSuit(chosenSuit)) {
+      socket.emit('invalidSuit');
+      return;
+    }
     const topCard = room.discardPile[room.discardPile.length - 1] || null;
 
     // Check of kaart gespeeld mag worden
@@ -142,19 +259,19 @@ io.on('connection', (socket) => {
     }
 
     // Speel de kaart
-    player.hand.splice(cardIndex, 1);
+    const cardToPlay = player.hand.splice(cardIndex, 1)[0];
     
     // Als het een Boer is en er is een kleur gekozen, verander de suit
-    if (card.value === 'boer' && chosenSuit) {
+    if (cardToPlay.value === 'boer' && chosenSuit) {
       // In eerste ronde moet het klaver blijven
       if (room.firstRound) {
-        card.chosenSuit = 'klaver';
+        cardToPlay.chosenSuit = 'klaver';
       } else {
-        card.chosenSuit = chosenSuit;
+        cardToPlay.chosenSuit = chosenSuit;
       }
     }
     
-    room.discardPile.push(card);
+    room.discardPile.push(cardToPlay);
     
     // Eerste ronde: tel wanneer elke speler 1 kaart heeft gedropt
     if (room.firstRound && !player.firstRoundPlayed) {
@@ -178,19 +295,21 @@ io.on('connection', (socket) => {
 
     // Reset cardsToDraw als de speler niet een 7, Aas of 10 heeft gespeeld
     // OF als we in de eerste ronde zijn (special cards werken niet)
-    if ((card.value !== '7' && card.value !== 'aas' && card.value !== '10') || room.firstRound) {
+    if ((cardToPlay.value !== '7' && cardToPlay.value !== 'aas' && cardToPlay.value !== '10') || room.firstRound) {
       player.cardsToDraw = 0;
     }
 
     // Handle speciale kaarten (NIET in eerste ronde)
     let skipNext = false;
     if (!room.firstRound) {
-      skipNext = handleSpecialCard(room, card, playerIndex);
+      skipNext = handleSpecialCard(room, cardToPlay, playerIndex);
     }
 
     // Check of speler gewonnen heeft
     if (player.hand.length === 0) {
-      io.to(roomCode).emit('gameOver', { winner: player.name });
+      // Security: Sanitize winner name
+      const winnerName = player.name || 'Onbekend';
+      io.to(roomCode).emit('gameOver', { winner: winnerName });
       room.gameStarted = false;
       return;
     }
@@ -209,12 +328,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('drawCard', () => {
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('rateLimited');
+      return;
+    }
+
     const roomCode = socket.roomCode;
     if (!roomCode || !rooms[roomCode]) return;
 
     const room = rooms[roomCode];
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     
+    // Security: Verify player exists and it's their turn
+    if (playerIndex === -1) {
+      socket.emit('notInRoom');
+      return;
+    }
     if (playerIndex !== room.currentPlayer) {
       socket.emit('notYourTurn');
       return;
@@ -257,12 +386,22 @@ io.on('connection', (socket) => {
   });
 
   socket.on('passTurn', () => {
+    if (!checkRateLimit(socket.id)) {
+      socket.emit('rateLimited');
+      return;
+    }
+
     const roomCode = socket.roomCode;
     if (!roomCode || !rooms[roomCode]) return;
 
     const room = rooms[roomCode];
     const playerIndex = room.players.findIndex(p => p.id === socket.id);
     
+    // Security: Verify player exists and it's their turn
+    if (playerIndex === -1) {
+      socket.emit('notInRoom');
+      return;
+    }
     if (playerIndex !== room.currentPlayer) {
       socket.emit('notYourTurn');
       return;
@@ -312,6 +451,9 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log('Speler disconnected:', socket.id);
+    
+    // Clean up rate limiting
+    delete requestLimits[socket.id];
     
     const roomCode = socket.roomCode;
     if (roomCode && rooms[roomCode]) {
@@ -466,7 +608,17 @@ function nextPlayer(room) {
 function sendGameState(roomCode) {
   const room = rooms[roomCode];
   
+  // Security: Verify room exists
+  if (!room || !room.players) {
+    return;
+  }
+  
   room.players.forEach((player, index) => {
+    // Security: Verify player object
+    if (!player || !player.id) {
+      return;
+    }
+    
     // Check of speler een speelbare kaart heeft
     let hasPlayableCard = false;
     if (index === room.currentPlayer) {
@@ -496,5 +648,6 @@ function sendGameState(roomCode) {
 }
 
 http.listen(PORT, () => {
-  console.log(`Server draait op http://localhost:${PORT}`);
+  console.log(`Server veilig draait op port ${PORT}`);
+  console.log('Security checks active: Input validation, Rate limiting, Player verification');
 });
