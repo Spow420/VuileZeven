@@ -783,6 +783,8 @@
       'schoppen': '♠'
     };
 
+    const SERVER_URL = 'https://vuilezeven.onrender.com';
+
     function handleLogin(event) {
       if (event && event.key !== 'Enter') return;
       const password = document.getElementById('passwordInput').value;
@@ -806,13 +808,21 @@
 
     async function updateData() {
       try {
-        const [statsRes, roomsRes] = await Promise.all([
-          fetch('/api/stats'),
-          fetch('/api/rooms')
-        ]);
+        const statsRes = await fetch(`${SERVER_URL}/api/stats`);
+        const roomsRes = await fetch(`${SERVER_URL}/api/rooms`);
+
+        if (!statsRes.ok) {
+          throw new Error(`Stats API failed: ${statsRes.status}`);
+        }
+        if (!roomsRes.ok) {
+          throw new Error(`Rooms API failed: ${roomsRes.status}`);
+        }
 
         const stats = await statsRes.json();
         const roomsData = await roomsRes.json();
+
+        console.log('📊 Stats:', stats);
+        console.log('🎮 Rooms Data:', roomsData);
 
         lastRoomData = roomsData.rooms || [];
 
@@ -879,7 +889,8 @@
             </div>
 `).join('');
       } catch (error) {
-        console.error('Fetch error:', error);
+        console.error('❌ Error fetching dashboard data:', error);
+        document.getElementById('roomsContainer').innerHTML = `<div class="empty-state">❌ Fout: ${error.message}</div>`;
       }
     }
 

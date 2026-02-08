@@ -150,6 +150,11 @@ app.use((req, res, next) => {
 
 // Security headers (SSL + XSS + Clickjacking protection)
 app.use((req, res, next) => {
+  // CORS headers for admin dashboard
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
@@ -166,6 +171,11 @@ app.get('/', (req, res) => {
 // Admin Dashboard
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Handle preflight requests
+app.options('/api/*', (req, res) => {
+  res.send(200);
 });
 
 // ========================
